@@ -26,10 +26,10 @@ const envConfig: Record<string, { account?: string; region: string }> = {
 
 const config = envConfig[env] || envConfig.dev;
 
-new LambdaApiStack(app, `LambdaApiStack-${env}`, {
+new LambdaApiStack(app, `PortfolioApiStack-${env}`, {
   env: config,
   environment: env,
-  description: `Stack for environment ${env}`,
+  description: `Stack for Portfolio API environment ${env}`,
 });
 
 app.synth();

@@ -15,37 +15,105 @@ Projekt AWS CDK z funkcjami Lambda i API Gateway. Zorganizowany w strukturze z f
 ```
 portfolio-api/
 ├── bin/
-│   └── app.ts                      # Punkt wejścia aplikacji CDK
+│   └── app.ts                           # Punkt wejścia aplikacji CDK
 ├── src/
-│   ├── core/                       # Core funkcjonalność
-│   │   ├── config/                 # Konfiguracja
-│   │   │   ├── api-messages.config.ts
-│   │   │   ├── lambda.config.ts    # Konfiguracja Lambda functions
+│   ├── core/                            # Core funkcjonalność
+│   │   ├── calculations/                # Kalkulatory finansowe (SRP)
+│   │   │   ├── options-calculator.ts    # Kalkulacje dla opcji
+│   │   │   ├── stocks-calculator.ts     # Kalkulacje dla akcji
 │   │   │   └── index.ts
-│   │   ├── factories/               # Factory functions
-│   │   │   ├── api-gateway-factory.ts
-│   │   │   ├── api-router-factory.ts
-│   │   │   ├── lambda-factory.ts
+│   │   ├── config/                      # Konfiguracja
+│   │   │   ├── api-messages.config.ts   # Komunikaty błędów/sukcesu
+│   │   │   ├── lambda.config.ts         # Konfiguracja Lambda functions
 │   │   │   └── index.ts
-│   │   └── models/                  # Modele TypeScript
-│   │       ├── api-endpoint.model.ts
-│   │       ├── errors.model.ts
-│   │       ├── lambda.model.ts
+│   │   ├── factories/                   # Factory functions (CDK)
+│   │   │   ├── api-gateway-factory.ts   # Tworzenie API Gateway
+│   │   │   ├── api-router-factory.ts    # Routing endpointów
+│   │   │   ├── lambda-factory.ts        # Tworzenie funkcji Lambda
+│   │   │   └── index.ts
+│   │   └── models/                      # Modele dla CDK/Core
+│   │       ├── api-endpoint.model.ts    # Model endpointu API
+│   │       ├── errors.model.ts          # Custom error classes
+│   │       ├── lambda.model.ts          # Model konfiguracji Lambda
 │   │       └── index.ts
-│   ├── lambdas/                     # Funkcje Lambda
+│   ├── lambdas/                         # Funkcje Lambda
 │   │   └── ibkr-csv-parser/
-│   │       └── index.ts              # IBKR CSV parser handler
-│   ├── utils/                       # Funkcje pomocnicze
-│   │   ├── lambda-helpers.ts        # Helpers dla Lambda responses
+│   │       └── index.ts                 # IBKR CSV parser handler
+│   ├── models/                          # Modele domenowe
+│   │   ├── asset-category.enum.ts       # Kategorie aktywów
+│   │   ├── csv-section.model.ts         # Model sekcji CSV
+│   │   ├── currency.enum.ts             # Waluty
+│   │   ├── exchange-rate.model.ts       # Kursy wymiany
+│   │   ├── ibkr-statement.model.ts      # Statement IBKR
+│   │   ├── ibkr-trade.dto.ts            # DTO transakcji z CSV
+│   │   ├── nbp-rate.dto.ts              # DTO odpowiedzi API NBP
+│   │   ├── trade-summary.model.ts       # Podsumowanie transakcji
+│   │   ├── trade.model.ts               # Model transakcji
 │   │   └── index.ts
-│   └── stack.ts                     # Główny stack CDK
-├── .env.example                     # Przykładowa konfiguracja środowiska
+│   ├── parsers/                         # Parsery (CSV, multipart)
+│   │   ├── ibkr-statement-csv.parser.ts # Parser plików CSV IBKR
+│   │   ├── ibkr-trades.parser.ts        # Parser sekcji Trades
+│   │   ├── multipart-parser.ts          # Parser multipart/form-data
+│   │   └── index.ts
+│   ├── services/                        # Serwisy biznesowe
+│   │   ├── nbp.service.ts               # Komunikacja z API NBP
+│   │   ├── trade-mapper.service.ts      # Mapowanie transakcji IBKR
+│   │   └── index.ts
+│   ├── utils/                           # Funkcje pomocnicze (SRP)
+│   │   ├── csv-parse.utils.ts           # Parsowanie linii CSV
+│   │   ├── date.utils.ts                # Operacje na datach
+│   │   ├── error-handler.utils.ts       # Obsługa błędów
+│   │   ├── response.utils.ts            # Tworzenie odpowiedzi HTTP
+│   │   ├── validation.utils.ts          # Walidacja (Zod)
+│   │   └── index.ts
+│   └── stack.ts                         # Główny stack CDK
+├── .env.example                         # Przykładowa konfiguracja środowiska
 ├── .gitignore
-├── cdk.json                         # Konfiguracja CDK
+├── cdk.json                             # Konfiguracja CDK
 ├── package.json
 ├── tsconfig.json
 └── README.md
 ```
+
+### Architektura i zasady
+
+Projekt zbudowany zgodnie z zasadami:
+- **KISS** (Keep It Simple, Stupid) - prostota i czytelność kodu
+- **SRP** (Single Responsibility Principle) - każdy moduł ma jedną odpowiedzialność
+- **Pure Functions** - funkcje bez efektów ubocznych, łatwe do testowania
+- **Factory Pattern** - modułowe komponenty infrastruktury
+- **Error Handling** - centralna obsługa błędów z custom error classes
+
+### Opis głównych modułów
+
+**`core/calculations/`** - Kalkulatory finansowe
+- `options-calculator.ts` - oblicza revenue/cost/income dla opcji (opening, closing, assignment)
+- `stocks-calculator.ts` - oblicza revenue/cost/income dla akcji (opening, closing)
+
+**`core/config/`** - Konfiguracja projektu
+- `lambda.config.ts` - definicja wszystkich funkcji Lambda i ich endpointów
+- `api-messages.config.ts` - komunikaty błędów i sukcesu
+
+**`core/factories/`** - Fabryki komponentów CDK
+- `lambda-factory.ts` - tworzy funkcje Lambda z konfiguracją
+- `api-gateway-factory.ts` - tworzy API Gateway z CORS i API Key
+- `api-router-factory.ts` - łączy endpointy z funkcjami Lambda
+
+**`parsers/`** - Parsery danych wejściowych
+- `multipart-parser.ts` - parsuje multipart/form-data z API Gateway
+- `ibkr-statement-csv.parser.ts` - parsuje pliki CSV z IBKR na sekcje
+- `ibkr-trades.parser.ts` - parsuje sekcję Trades do IBKRTradeDto[]
+
+**`services/`** - Serwisy biznesowe
+- `nbp.service.ts` - pobiera kursy walut z API NBP
+- `trade-mapper.service.ts` - mapuje transakcje IBKR na Trade[] z kursami NBP
+
+**`utils/`** - Funkcje pomocnicze (każda z jedną odpowiedzialnością)
+- `error-handler.utils.ts` - konwertuje błędy na odpowiedzi HTTP
+- `response.utils.ts` - tworzy standardowe odpowiedzi HTTP
+- `validation.utils.ts` - waliduje dane wejściowe (Zod)
+- `csv-parse.utils.ts` - parsuje linie CSV
+- `date.utils.ts` - operacje na datach
 
 ## Wymagania
 

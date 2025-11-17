@@ -1,6 +1,7 @@
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { LambdaFunctionConfig } from '../models';
+import { Duration } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as path from 'path';
 
@@ -22,6 +23,8 @@ export const lambdaFactory = (
       ...config.environment,
     },
     description: config.description || `${config.name} Lambda function`,
+    timeout: Duration.seconds(30), // Timeout 30s dla wywołań API zewnętrznych
+    memorySize: 512, // 512MB RAM dla szybszego wykonania
     bundling: {
       minify: true,
       sourceMap: true,
