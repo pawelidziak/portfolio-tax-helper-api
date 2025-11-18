@@ -25,7 +25,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         // 4. Mapuj IBKRTradeDTO[] na Trade[] z kursami NBP i wartościami w PLN
         const trades = await mapIBKRTradesToTrades(ibkrStatement.trades);
 
-        return createResponse(200, { message: 'CSV parsed successfully', data: trades });
+        return createResponse(200, { trades });
       }
 
       default:
