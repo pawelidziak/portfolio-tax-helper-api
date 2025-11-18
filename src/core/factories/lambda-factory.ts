@@ -14,6 +14,14 @@ export const lambdaFactory = (
   config: LambdaFunctionConfig,
   environment: string
 ): LambdaFactoryResult => {
+  // Użyj bundling options z config lub domyślne wartości
+  const bundlingOptions = {
+    minify: config.bundling?.minify ?? true,
+    sourceMap: config.bundling?.sourceMap ?? true,
+    forceDockerBundling: config.bundling?.forceDockerBundling ?? false,
+    ...(config.bundling?.loader && { loader: config.bundling.loader }),
+  };
+
   const lambda = new NodejsFunction(scope, `${config.name}Lambda`, {
     runtime: Runtime.NODEJS_20_X,
     handler: 'handler',
@@ -25,11 +33,7 @@ export const lambdaFactory = (
     description: config.description || `${config.name} Lambda function`,
     timeout: Duration.seconds(30), // Timeout 30s dla wywołań API zewnętrznych
     memorySize: 512, // 512MB RAM dla szybszego wykonania
-    bundling: {
-      minify: true,
-      sourceMap: true,
-      forceDockerBundling: false,
-    },
+    bundling: bundlingOptions,
   });
 
   return { lambda };

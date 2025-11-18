@@ -1,3 +1,4 @@
+import { BundlingOptions } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { ApiEndpointConfig } from './api-endpoint.model';
 
 /**
@@ -9,4 +10,5 @@ export interface LambdaFunctionConfig {
   endpoints: ApiEndpointConfig[]; // API Gateway endpoints for this function
   environment?: Record<string, string>; // Environment variables specific to this function
   description?: string; // Function description
+  bundling?: BundlingOptions; // Custom bundling options (optional)
 }

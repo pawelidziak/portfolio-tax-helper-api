@@ -37,3 +37,7 @@ yarn-error.log*
 dist
 build
 
+# Generated OpenAPI files
+openapi.json
+temp-schemas/
+

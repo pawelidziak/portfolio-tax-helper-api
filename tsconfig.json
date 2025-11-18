@@ -30,6 +30,6 @@
     "resolveJsonModule": true,
     "noEmit": true
   },
-  "include": ["bin/**/*", "src/**/*"],
+  "include": ["bin/**/*", "src/**/*", "scripts/**/*"],
   "exclude": ["node_modules", "cdk.out"]
 }

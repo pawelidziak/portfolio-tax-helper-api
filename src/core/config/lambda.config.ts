@@ -7,6 +7,12 @@ import { LambdaFunctionConfig } from '../models';
  */
 export const LAMBDA_FUNCTIONS: LambdaFunctionConfig[] = [
   {
+    name: 'ApiModels',
+    entry: 'api-models/index.ts',
+    description: 'OpenAPI models endpoint',
+    endpoints: [{ path: '/api-models', method: HttpMethod.GET, requiresApiKey: false }],
+  },
+  {
     name: 'IbkrCsvParser',
     entry: 'ibkr-csv-parser/index.ts',
     description: 'IBKR CSV parser',

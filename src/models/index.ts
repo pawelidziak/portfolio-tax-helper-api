@@ -5,5 +5,5 @@ export * from './exchange-rate.model';
 export * from './csv-section.model';
 export * from './ibkr-trade.dto';
 export * from './currency.enum';
-export * from './trade.model';
 export * from './nbp-rate.dto';
+export * from './trade.model';

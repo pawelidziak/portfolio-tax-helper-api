@@ -3,31 +3,17 @@
   "version": "1.0.0",
   "description": "Projekt AWS Lambda z API Gateway używający AWS CDK",
   "scripts": {
+    "generate:openapi": "ts-node scripts/generate-openapi.ts",
+    "deploy": "sh -c 'env=${1:-dev} cdk deploy --context env=$env --profile portfolio-api' --",
+    "synth": "sh -c 'env=${1:-dev} cdk synth --context env=$env --profile portfolio-api' --",
+    "diff": "sh -c 'env=${1:-dev} cdk diff --context env=$env --profile portfolio-api' --",
+    "destroy": "sh -c 'env=${1:-dev} cdk destroy --context env=$env --profile portfolio-api' --",
     "type-check": "tsc --noEmit",
-    "cdk": "cdk",
-    "aws": "aws",
-    "deploy": "cdk deploy --profile portfolio-api",
-    "deploy:dev": "cdk deploy --context env=dev --profile portfolio-api",
-    "deploy:test": "cdk deploy --context env=test --profile portfolio-api",
-    "deploy:prod": "cdk deploy --context env=prod --profile portfolio-api",
-    "synth": "cdk synth --profile portfolio-api",
-    "synth:dev": "cdk synth --context env=dev --profile portfolio-api",
-    "synth:test": "cdk synth --context env=test --profile portfolio-api",
-    "synth:prod": "cdk synth --context env=prod --profile portfolio-api",
-    "diff": "cdk diff --profile portfolio-api",
-    "diff:dev": "cdk diff --context env=dev --profile portfolio-api",
-    "diff:test": "cdk diff --context env=test --profile portfolio-api",
-    "diff:prod": "cdk diff --context env=prod --profile portfolio-api",
-    "destroy": "cdk destroy --profile portfolio-api",
-    "destroy:dev": "cdk destroy --context env=dev --profile portfolio-api",
-    "destroy:test": "cdk destroy --context env=test --profile portfolio-api",
-    "destroy:prod": "cdk destroy --context env=prod --profile portfolio-api",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"**/*.{ts,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,json,md}\"",
-    "check:aws": "aws sts get-caller-identity",
-    "check:aws:profile": "aws sts get-caller-identity --profile portfolio-api"
+    "check:aws": "aws sts get-caller-identity --profile portfolio-api"
   },
   "keywords": [
     "aws",
@@ -52,7 +38,8 @@
     "prettier": "^3.2.4",
     "source-map-support": "^0.5.21",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "typescript-json-schema": "^0.65.1"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.925.0",
