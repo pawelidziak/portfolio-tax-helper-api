@@ -5,7 +5,7 @@ import { ErrorMessages } from '@core/config';
 // Import wygenerowanego openapi.json
 // esbuild automatycznie włączy JSON do bundla jako moduł
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const openApi = require('../../../openapi.json');
+import openApi from '../../../openapi.json';
 
 /**
  * Lambda handler dla endpointu z modelami OpenAPI
