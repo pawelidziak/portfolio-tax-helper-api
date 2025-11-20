@@ -2,6 +2,9 @@
 cdk.out
 cdk.context.json
 
+# Example data
+example_data
+
 # TypeScript
 *.js
 *.d.ts
