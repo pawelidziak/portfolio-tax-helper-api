@@ -3,6 +3,7 @@ export * from './asset-category.enum';
 export * from './trade-summary.model';
 export * from './exchange-rate.model';
 export * from './csv-section.model';
+export * from './ibkr-deposit.dto';
 export * from './ibkr-trade.dto';
 export * from './currency.enum';
 export * from './nbp-rate.dto';

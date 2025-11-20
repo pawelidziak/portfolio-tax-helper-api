@@ -11,13 +11,14 @@
 
 import {
   AssetCategoryEnum,
+  IBKRDepositDto,
+  IBKRStatement,
   CurrencyEnum,
   IBKRTradeDto,
-  NBPRateDto,
-  Trade,
   TradeSummary,
   ExchangeRate,
-  IBKRStatement,
+  NBPRateDto,
+  Trade,
 } from '@models';
 
 export const ModelRegistry = {
@@ -26,6 +27,7 @@ export const ModelRegistry = {
   CurrencyEnum: {} as CurrencyEnum,
 
   // DTOs
+  IBKRDepositDto: {} as IBKRDepositDto,
   IBKRTradeDto: {} as IBKRTradeDto,
   NBPRateDto: {} as NBPRateDto,
 

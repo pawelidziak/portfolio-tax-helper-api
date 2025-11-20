@@ -3,19 +3,20 @@
  *
  * Odpowiedzialność:
  * - Wczytanie i parsowanie pliku CSV
- * - Wyodrębnienie sekcji Trades
- * - Zwrócenie IBKRTradeDTO[] (surowe dane z CSV)
+ * - Wyodrębnienie sekcji Trades i Deposits & Withdrawals
+ * - Zwrócenie IBKRStatement (surowe dane z CSV)
  */
 
+import { parseDepositsSection } from './ibkr-deposits.parser';
 import { parseTradesSection } from './ibkr-trades.parser';
 import { CsvSection, IBKRStatement } from '@models';
 import { parseCsvLine } from '@utils';
 
 /**
- * Enum dla nazw sekcji CSV
+ * Enum dla typów wierszy w CSV IBKR
+ * (nie dla nazw sekcji - nazwy sekcji są przechowywane jako stringi)
  */
 export enum CsvSectionEnum {
-  TRADES = 'Trades',
   HEADER = 'Header',
   DATA = 'Data',
 }
@@ -30,10 +31,13 @@ export const parseIBKRCsv = async (input: string | Buffer): Promise<IBKRStatemen
 
   const sections = parseCsvSections(fileContent);
   const tradesSection = sections.get('Trades');
+  const depositsSection = sections.get('Deposits & Withdrawals');
 
+  if (!depositsSection) console.error('Nie znaleziono sekcji "Deposits & Withdrawals" w CSV');
   if (!tradesSection) console.error('Nie znaleziono sekcji "Trades" w CSV');
 
   return {
+    deposits: depositsSection ? parseDepositsSection(depositsSection) : [],
     trades: tradesSection ? parseTradesSection(tradesSection) : [],
   };
 };
