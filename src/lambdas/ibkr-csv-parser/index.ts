@@ -25,7 +25,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         // 4. Mapuj IBKRTradeDTO[] na Trade[] z kursami NBP i wartościami w PLN
         const trades = await mapIBKRTradesToTrades(ibkrStatement.trades);
 
-        return createResponse(200, { trades });
+        // 5. Zwróć depozyty (nie mapujemy)
+        const deposits = ibkrStatement.deposits;
+
+        return createResponse(200, { trades, deposits });
       }
 
       default:
