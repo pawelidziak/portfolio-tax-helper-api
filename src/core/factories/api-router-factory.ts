@@ -1,5 +1,6 @@
-import { RestApi, Resource, LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
+import { LambdaIntegration, Resource, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { IFunction } from 'aws-cdk-lib/aws-lambda';
+
 import { ApiEndpointConfig } from '../models';
 
 export interface ApiRouterFactoryResult {

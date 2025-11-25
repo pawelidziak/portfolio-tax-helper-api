@@ -15,12 +15,6 @@ export class HttpError extends Error {
   }
 }
 
-export class NotFoundError extends HttpError {
-  constructor(message = ErrorMessages.NOT_FOUND, details?: unknown) {
-    super(404, message, details);
-  }
-}
-
 export class ValidationError extends HttpError {
   constructor(message = ErrorMessages.VALIDATION_ERROR, details?: unknown) {
     super(400, message, details);
@@ -30,6 +24,12 @@ export class ValidationError extends HttpError {
 export class BadRequestError extends HttpError {
   constructor(message = ErrorMessages.BAD_REQUEST, details?: unknown) {
     super(400, message, details);
+  }
+}
+
+export class NotFoundError extends HttpError {
+  constructor(message = ErrorMessages.NOT_FOUND, details?: unknown) {
+    super(404, message, details);
   }
 }
 

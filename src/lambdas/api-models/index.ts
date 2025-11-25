@@ -1,10 +1,9 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { APIGatewayProxyResult, APIGatewayProxyEvent } from 'aws-lambda';
 import { createResponse, handleError } from '@utils';
 import { ErrorMessages } from '@core/config';
 
 // Import wygenerowanego openapi.json
 // esbuild automatycznie włączy JSON do bundla jako moduł
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 import openApi from '../../../openapi.json';
 
 /**

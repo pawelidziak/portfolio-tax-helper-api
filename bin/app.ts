@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { LambdaApiStack } from '../src/stack';
 import 'source-map-support/register';
 import { App } from 'aws-cdk-lib';
+
+import { LambdaApiStack } from '../src/stack';
 
 const app = new App();
 

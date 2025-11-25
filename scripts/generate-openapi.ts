@@ -1,7 +1,8 @@
+import { writeFileSync, readFileSync, rmSync } from 'fs';
 import { execSync } from 'child_process';
-import { readFileSync, writeFileSync, rmSync } from 'fs';
-import { ModelRegistry } from '../src/core/config/models-registry';
 import path from 'path';
+
+import { ModelRegistry } from '../src/core/config/models-registry';
 
 /**
  * Generuje OpenAPI 3.0 spec bezpośrednio z TypeScript types
@@ -36,7 +37,7 @@ for (const modelName of modelNames) {
     '--noExtraProps',
   ].join(' ');
 
-  console.log(`[openapi] Generating ${modelName}...`);
+  console.log('🔄', `[openapi] Generating ${modelName}...`);
   try {
     execSync(cmd, { stdio: 'pipe' });
     const schema = JSON.parse(readFileSync(tempFile, 'utf-8'));

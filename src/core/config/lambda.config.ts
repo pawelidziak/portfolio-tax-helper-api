@@ -1,4 +1,5 @@
 import { HttpMethod } from 'aws-cdk-lib/aws-events';
+
 import { LambdaFunctionConfig } from '../models';
 
 /**

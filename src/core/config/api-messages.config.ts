@@ -28,6 +28,12 @@ export const ErrorMessages: Record<string, string> = {
   // Resource specific
   ENTITY_ALREADY_EXISTS: 'Entity already exists',
   RESOURCE_NOT_FOUND: 'Resource not found',
+
+  // IBKR CSV Parser errors
+  MISSING_DATE_RANGE_IN_METADATA:
+    'Brak zakresu dat w metadanych CSV. Nie można obliczyć wartości w PLN bez kursów NBP.',
+  MISSING_CURRENCIES_IN_METADATA:
+    'Brak walut w metadanych CSV. Nie można obliczyć wartości w PLN bez kursów NBP.',
 };
 
 export const SuccessMessages: Record<string, string> = {

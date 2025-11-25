@@ -10,30 +10,40 @@
  */
 
 import {
-  AssetCategoryEnum,
-  IBKRDepositDto,
-  IBKRStatement,
+  StatementResponseDto,
+  AccountInformation,
+  NBPRateResponseDto,
+  TradeCategoryEnum,
+  StatementMetadata,
+  NetAssetValue,
   CurrencyEnum,
-  IBKRTradeDto,
-  TradeSummary,
   ExchangeRate,
-  NBPRateDto,
+  TaxSummary,
+  Interest,
+  Dividend,
+  Deposit,
+  Borrow,
   Trade,
-} from '@models';
+} from '@shared/models';
 
 export const ModelRegistry = {
   // Enums
-  AssetCategoryEnum: {} as AssetCategoryEnum,
+  TradeCategoryEnum: {} as TradeCategoryEnum,
   CurrencyEnum: {} as CurrencyEnum,
 
   // DTOs
-  IBKRDepositDto: {} as IBKRDepositDto,
-  IBKRTradeDto: {} as IBKRTradeDto,
-  NBPRateDto: {} as NBPRateDto,
+  StatementResponseDto: {} as StatementResponseDto,
+  NBPRateResponseDto: {} as NBPRateResponseDto,
 
-  // Models
-  IBKRStatement: {} as IBKRStatement,
+  // Domain Models
+  AccountInformation: {} as AccountInformation,
+  StatementMetadata: {} as StatementMetadata,
+  NetAssetValue: {} as NetAssetValue,
   ExchangeRate: {} as ExchangeRate,
-  TradeSummary: {} as TradeSummary,
+  TaxSummary: {} as TaxSummary,
+  Dividend: {} as Dividend,
+  Interest: {} as Interest,
+  Deposit: {} as Deposit,
+  Borrow: {} as Borrow,
   Trade: {} as Trade,
 };

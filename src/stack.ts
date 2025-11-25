@@ -1,7 +1,8 @@
-import { apiGatewayFactory, lambdaFactory, apiRouterFactory } from './core/factories';
-import { LAMBDA_FUNCTIONS } from './core/config';
-import { Stack, StackProps } from 'aws-cdk-lib';
+import { StackProps, Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+
+import { apiGatewayFactory, apiRouterFactory, lambdaFactory } from './core/factories';
+import { LAMBDA_FUNCTIONS } from './core/config';
 
 export interface LambdaApiStackProps extends StackProps {
   environment: string;

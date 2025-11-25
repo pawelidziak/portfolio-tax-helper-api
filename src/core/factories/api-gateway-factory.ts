@@ -1,4 +1,4 @@
-import { ApiKey, Cors, Period, RestApi, UsagePlan } from 'aws-cdk-lib/aws-apigateway';
+import { UsagePlan, RestApi, ApiKey, Period, Cors } from 'aws-cdk-lib/aws-apigateway';
 import { CfnOutput, Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
@@ -41,7 +41,7 @@ export function apiGatewayFactory(
     binaryMediaTypes: ['multipart/form-data'],
   });
 
-  let apiKey: ApiKey | undefined;
+  let apiKey: undefined | ApiKey;
 
   // Create API Key and Usage Plan (if enabled)
   if (props.enableApiKey !== false) {

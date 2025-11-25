@@ -3,10 +3,11 @@
     "paths": {
       "@core/*": ["./src/core/*"],
       "@lambdas/*": ["./src/lambdas/*"],
-      "@utils": ["./src/utils/index.ts"],
-      "@models": ["./src/models/index.ts"],
-      "@services": ["./src/services/index.ts"],
-      "@parsers": ["./src/parsers/index.ts"]
+      "@utils": ["./src/shared/utils/index.ts"],
+      "@shared/models": ["./src/shared/models/index.ts"],
+      "@shared/api": ["./src/shared/api/index.ts"],
+      "@shared/parsers": ["./src/shared/parsers/index.ts"],
+      "@ibkr": ["./src/ibkr/index.ts"]
     },
     "target": "ES2020",
     "module": "commonjs",
@@ -30,6 +31,6 @@
     "resolveJsonModule": true,
     "noEmit": true
   },
-  "include": ["bin/**/*", "src/**/*", "scripts/**/*"],
+  "include": ["bin/**/*", "src/**/*"],
   "exclude": ["node_modules", "cdk.out"]
 }

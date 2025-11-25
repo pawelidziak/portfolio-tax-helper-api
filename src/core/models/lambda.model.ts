@@ -1,4 +1,5 @@
 import { BundlingOptions } from 'aws-cdk-lib/aws-lambda-nodejs';
+
 import { ApiEndpointConfig } from './api-endpoint.model';
 
 /**

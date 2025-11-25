@@ -1,9 +1,10 @@
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
-import { LambdaFunctionConfig } from '../models';
 import { Duration } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as path from 'path';
+
+import { LambdaFunctionConfig } from '../models';
 
 export interface LambdaFactoryResult {
   lambda: NodejsFunction;

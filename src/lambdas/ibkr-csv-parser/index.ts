@@ -1,9 +1,20 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { parseMultipartFormData, parsedCsvSchema } from '@parsers';
-import { handleError, createResponse, validateFile } from '@utils';
-import { mapIBKRTradesToTrades } from '@services';
+import {
+  mapIBKRInterestsToInterests,
+  mapIBKRDividendsToDividends,
+  mapIBKRAccountInformation,
+  mapIBKRStatementMetadata,
+  mapIBKRBorrowsToBorrows,
+  mapIBKRTradesToTrades,
+  mapIBKRNetAssetValue,
+  mapIBKRDeposits,
+  parseIBKRCsv,
+} from '@ibkr';
+import { parseMultipartFormData, parsedCsvSchema } from '@shared/parsers';
+import { APIGatewayProxyResult, APIGatewayProxyEvent } from 'aws-lambda';
+import { createResponse, validateFile, handleError } from '@utils';
+import { StatementResponseDto } from '@shared/models';
+import { getExchangeRates } from '@shared/api';
 import { ErrorMessages } from '@core/config';
-import { parseIBKRCsv } from '@parsers';
 
 /**
  * Lambda handler for IBKR CSV parser
@@ -22,13 +33,50 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         // 3. IBKR parser parsuje zawartość CSV
         const ibkrStatement = await parseIBKRCsv(validatedFile.content);
 
-        // 4. Mapuj IBKRTradeDTO[] na Trade[] z kursami NBP i wartościami w PLN
-        const trades = await mapIBKRTradesToTrades(ibkrStatement.trades);
+        // 4. Użyj metadanych z CSV (zakres dat i waluty)
+        const metadata = ibkrStatement.metadata;
 
-        // 5. Zwróć depozyty (nie mapujemy)
-        const deposits = ibkrStatement.deposits;
+        // Walidacja metadanych przed pobraniem kursów - BEZ KURSÓW NBP NIE MOŻEMY OBLICZYĆ WARTOŚCI W PLN
+        if (!metadata.minDate || !metadata.maxDate) {
+          return createResponse(400, ErrorMessages.MISSING_DATE_RANGE_IN_METADATA);
+        }
 
-        return createResponse(200, { trades, deposits });
+        if (metadata.currencies.size === 0) {
+          return createResponse(400, ErrorMessages.MISSING_CURRENCIES_IN_METADATA);
+        }
+
+        // Pobierz kursy NBP - metadane są zwalidowane
+        const exchangeRatesCache = await getExchangeRates(
+          metadata.currencies,
+          metadata.minDate,
+          metadata.maxDate,
+          10
+        );
+
+        // 6. Mapuj wszystkie dane z użyciem wspólnego cache kursów
+        const dividends = mapIBKRDividendsToDividends(ibkrStatement.dividends, exchangeRatesCache);
+        const interests = mapIBKRInterestsToInterests(ibkrStatement.interests, exchangeRatesCache);
+        const borrows = mapIBKRBorrowsToBorrows(ibkrStatement.borrows, exchangeRatesCache);
+        const trades = mapIBKRTradesToTrades(ibkrStatement.trades, exchangeRatesCache);
+
+        // Mapuj proste modele (bez dodatkowych obliczeń)
+        const accountInformation = mapIBKRAccountInformation(ibkrStatement.accountInformation);
+        const netAssetValue = mapIBKRNetAssetValue(ibkrStatement.netAssetValue);
+        const deposits = mapIBKRDeposits(ibkrStatement.deposits);
+        const mappedMetadata = mapIBKRStatementMetadata(metadata);
+
+        const statement: StatementResponseDto = {
+          metadata: mappedMetadata,
+          accountInformation,
+          netAssetValue,
+          deposits,
+          interests,
+          dividends,
+          borrows,
+          trades,
+        };
+
+        return createResponse(200, statement);
       }
 
       default:
