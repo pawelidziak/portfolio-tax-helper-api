@@ -1,6 +1,7 @@
 import { IBKRAccountInformationDto } from './ibkr-account-information.dto';
 import { IBKRStatementMetadata } from './ibkr-statement-metadata.dto';
 import { IBKRNetAssetValueDto } from './ibkr-net-asset-value.dto';
+import { IBKROpenPositionDto } from './ibkr-open-position.dto';
 import { IBKRInterestDto } from './ibkr-interest.dto';
 import { IBKRDividendDto } from './ibkr-dividend.dto';
 import { IBKRDepositDto } from './ibkr-deposit.dto';
@@ -20,4 +21,5 @@ export interface IBKRStatement {
   metadata: IBKRStatementMetadata;
   accountInformation: IBKRAccountInformationDto;
   netAssetValue: IBKRNetAssetValueDto;
+  openPositions: IBKROpenPositionDto[];
 }

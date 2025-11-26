@@ -2,6 +2,7 @@ import {
   AccountInformation,
   StatementMetadata,
   NetAssetValue,
+  OpenPosition,
   Interest,
   Dividend,
   Deposit,
@@ -19,10 +20,12 @@ import {
  */
 export interface StatementResponseDto {
   accountInformation: AccountInformation;
+  openPositions: OpenPosition[];
   netAssetValue: NetAssetValue;
   metadata: StatementMetadata;
   interests: Interest[];
   dividends: Dividend[];
+  generateDate: string;
   deposits: Deposit[];
   borrows: Borrow[];
   trades: Trade[];

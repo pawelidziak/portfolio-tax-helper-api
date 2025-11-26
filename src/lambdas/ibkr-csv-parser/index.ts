@@ -1,4 +1,5 @@
 import {
+  mapIBKROpenPositionsToOpenPositions,
   mapIBKRInterestsToInterests,
   mapIBKRDividendsToDividends,
   mapIBKRAccountInformation,
@@ -58,6 +59,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         const interests = mapIBKRInterestsToInterests(ibkrStatement.interests, exchangeRatesCache);
         const borrows = mapIBKRBorrowsToBorrows(ibkrStatement.borrows, exchangeRatesCache);
         const trades = mapIBKRTradesToTrades(ibkrStatement.trades, exchangeRatesCache);
+        const openPositions = mapIBKROpenPositionsToOpenPositions(
+          ibkrStatement.openPositions,
+          exchangeRatesCache
+        );
 
         // Mapuj proste modele (bez dodatkowych obliczeń)
         const accountInformation = mapIBKRAccountInformation(ibkrStatement.accountInformation);
@@ -66,9 +71,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         const mappedMetadata = mapIBKRStatementMetadata(metadata);
 
         const statement: StatementResponseDto = {
+          generateDate: new Date().toISOString(),
           metadata: mappedMetadata,
           accountInformation,
           netAssetValue,
+          openPositions,
           deposits,
           interests,
           dividends,

@@ -2,6 +2,7 @@ export * from './account-information.model';
 export * from './statement-metadata.model';
 export * from './net-asset-value.model';
 export * from './exchange-rate.model';
+export * from './open-position.model';
 export * from './tax-summary.model';
 export * from './dividend.model';
 export * from './interest.model';

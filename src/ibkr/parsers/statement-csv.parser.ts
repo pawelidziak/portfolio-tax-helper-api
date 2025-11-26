@@ -11,6 +11,7 @@ import { CsvSection } from '@shared/models';
 import { parseCsvLine } from '@utils';
 
 import {
+  parseOpenPositionsSection,
   parseDividendsSection,
   parseDepositsSection,
   parseInterestSection,
@@ -51,6 +52,7 @@ export const parseIBKRCsv = async (input: string | Buffer): Promise<IBKRStatemen
   const cashReportSection = sections.get('Cash Report');
   const accountInformationSection = sections.get('Account Information');
   const netAssetValueSection = sections.get('Net Asset Value');
+  const openPositionsSection = sections.get('Open Positions');
 
   if (!depositsSection) console.error('Nie znaleziono sekcji "Deposits & Withdrawals" w CSV');
   if (!tradesSection) console.error('Nie znaleziono sekcji "Trades" w CSV');
@@ -66,6 +68,7 @@ export const parseIBKRCsv = async (input: string | Buffer): Promise<IBKRStatemen
     borrows: borrowFeeDetailsSection ? parseBorrowsSection(borrowFeeDetailsSection) : [],
     accountInformation: parseAccountInformationSection(accountInformationSection),
     netAssetValue: parseNetAssetValueSection(netAssetValueSection),
+    openPositions: openPositionsSection ? parseOpenPositionsSection(openPositionsSection) : [],
     metadata,
   };
 };

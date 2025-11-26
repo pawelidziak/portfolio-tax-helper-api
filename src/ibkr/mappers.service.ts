@@ -16,10 +16,11 @@
 
 import {
   AccountInformation,
-  TradeCategoryEnum,
   NetAssetValueItem,
   StatementMetadata,
+  TradeCategoryEnum,
   NetAssetValue,
+  OpenPosition,
   TaxSummary,
   Dividend,
   Interest,
@@ -35,6 +36,7 @@ import {
   IBKRNetAssetValueItemDto,
   IBKRStatementMetadata,
   IBKRNetAssetValueDto,
+  IBKROpenPositionDto,
   IBKRDividendDto,
   IBKRInterestDto,
   IBKRDepositDto,
@@ -425,4 +427,46 @@ const calculateBorrowSummary = (borrow: IBKRBorrowDto, nbpRate: undefined | numb
   if (!nbpRate) return EMPTY_SUMMARY;
 
   return calculateBorrowResult(borrow, nbpRate);
+};
+
+/**
+ * Mapuje IBKROpenPositionDto[] na OpenPosition[] z kursami NBP
+ *
+ * @param positions - Surowe pozycje z CSV (IBKROpenPositionDto[])
+ * @param exchangeRatesCache - Cache z kursami NBP (pobrany raz dla wszystkich danych)
+ * @param reportEndDate - Data końca okresu raportu (używana do pobrania kursu wymiany)
+ * @returns OpenPosition[] z kursami wymiany
+ */
+export const mapIBKROpenPositionsToOpenPositions = (
+  positions: IBKROpenPositionDto[],
+  exchangeRatesCache: ExchangeRatesCache
+): OpenPosition[] => {
+  if (positions.length === 0) return [];
+
+  // Użyj dzisiejszej daty minus 1 dzień
+  const today: string = new Date().toISOString().split('T')[0];
+  const previousDay: string = getPreviousDay(today);
+
+  return positions.map(position => {
+    // Mapuj kategorię z IBKR na TradeCategoryEnum
+    const category = IBKR_TRADE_CATEGORY_MAP[position.assetCategory] || TradeCategoryEnum.UNKNOWN;
+
+    const result = findNBPRate(exchangeRatesCache, position.currency, previousDay);
+    const { date, rate } = result || {};
+
+    return {
+      symbol: position.symbol,
+      category,
+      currency: position.currency,
+      quantity: position.quantity,
+      mult: position.mult,
+      costPrice: position.costPrice,
+      costBasis: position.costBasis,
+      closePrice: position.closePrice,
+      value: position.value,
+      unrealizedPL: position.unrealizedPL,
+      code: position.code || undefined,
+      exchangeRate: { date, rate },
+    };
+  });
 };

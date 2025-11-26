@@ -1,6 +1,7 @@
 export * from './ibkr-account-information.dto';
 export * from './ibkr-statement-metadata.dto';
 export * from './ibkr-net-asset-value.dto';
+export * from './ibkr-open-position.dto';
 export * from './ibkr-statement.dto';
 export * from './ibkr-dividend.dto';
 export * from './ibkr-interest.dto';

@@ -1,3 +1,4 @@
+export * from './open-positions.parser';
 export * from './dividends.parser';
 export * from './deposits.parser';
 export * from './interest.parser';
