@@ -1,6 +1,7 @@
 {
   "name": "portfolio-api",
   "version": "1.0.0",
+  "type": "module",
   "description": "Projekt AWS Lambda z API Gateway używający AWS CDK",
   "scripts": {
     "generate:openapi": "tsx scripts/generate-openapi.ts",

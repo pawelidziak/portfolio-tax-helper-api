@@ -1,7 +1,9 @@
-import * as path from 'path';
-import * as fs from 'fs';
+import { dirname, isAbsolute, join } from 'path';
+import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
 
 import {
+  mapIBKROpenPositionsToOpenPositions,
   mapIBKRDividendsToDividends,
   mapIBKRInterestsToInterests,
   mapIBKRBorrowsToBorrows,
@@ -9,11 +11,13 @@ import {
   parseIBKRCsv,
 } from '../src/ibkr';
 import { getExchangeRates } from '../src/shared/api/nbp.api';
-import { TradeCategoryEnum } from '../src/shared/models';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const getFileContent = (filePath: string) => {
-  const fullPath = path.isAbsolute(filePath) ? filePath : path.join(__dirname, '..', filePath);
-  return fs.readFileSync(fullPath, 'utf-8');
+  const fullPath = isAbsolute(filePath) ? filePath : join(__dirname, '..', filePath);
+  return readFileSync(fullPath, 'utf-8');
 };
 
 const main = async () => {
@@ -28,9 +32,6 @@ const main = async () => {
       throw new Error('Brak metadanych (zakres dat lub waluty) w CSV');
     }
 
-    console.log(
-      `📊 Pobieranie kursów NBP: ${metadata.minDate} - ${metadata.maxDate}, waluty: ${Array.from(metadata.currencies).join(', ')}`
-    );
     const exchangeRatesCache = await getExchangeRates(
       metadata.currencies,
       metadata.minDate,
@@ -43,12 +44,15 @@ const main = async () => {
     const interests = mapIBKRInterestsToInterests(ibkrStatement.interests, exchangeRatesCache);
     const borrows = mapIBKRBorrowsToBorrows(ibkrStatement.borrows, exchangeRatesCache);
     const trades = mapIBKRTradesToTrades(ibkrStatement.trades, exchangeRatesCache);
-
-    console.log(trades.filter(trade => trade.category === TradeCategoryEnum.OPTIONS));
-
-    const x = trades.filter(
-      (trade) => trade.category === TradeCategoryEnum.OPTIONS && trade.dateTime.includes('2025-11-14')
+    const openPositions = mapIBKROpenPositionsToOpenPositions(
+      ibkrStatement.openPositions,
+      exchangeRatesCache,
+      metadata.maxDate || ''
     );
+
+    console.log(openPositions);
+
+
 
     // const totalRevenue = x.reduce((acc, trade) => acc + (trade?.summary?.revenue ?? 0), 0);
     // const totalCost = x.reduce((acc, trade) => acc + (trade?.summary?.cost ?? 0), 0);
