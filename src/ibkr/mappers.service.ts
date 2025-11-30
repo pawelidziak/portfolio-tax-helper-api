@@ -191,7 +191,9 @@ export const mapIBKRTradesToTrades = (
   // 3) Utwórz nowy engine dla tego batcha transakcji
   const stockEngine = new TradeTaxEngine({ multiplier: 1 });
   const optionEngine = new TradeTaxEngine({ multiplier: 100 });
-  const fxEngine = new TradeTaxEngine({ multiplier: 1 });
+  // NOTE: fxEngine nie jest używany - FOREX nie jest obecnie przetwarzany podatkowo.
+  // W przyszłości Trade będzie miał pole "isSpekulative" (lub podobne) do rozróżnienia
+  // wymiany waluty (nieopodatkowanej) od spekulacji na FOREX (opodatkowanej).
 
   // 4) Mapuj i licz podatek
   const mappedTrades = sortedTrades.map(trade => {
@@ -211,8 +213,6 @@ export const mapIBKRTradesToTrades = (
         engineResult = optionEngine.processTrade(trade, rate);
       if (category === OperationCategoryEnum.STOCKS)
         engineResult = stockEngine.processTrade(trade, rate);
-      if (category === OperationCategoryEnum.FOREX)
-        engineResult = fxEngine.processTrade(trade, rate);
     }
 
     return {
