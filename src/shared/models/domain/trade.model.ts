@@ -1,4 +1,5 @@
 import { ExchangeRate } from './exchange-rate.model';
+import { TradeAction } from './trade-action.model';
 import { TaxSummary } from './tax-summary.model';
 import { TradeCategoryEnum } from '../enums';
 
@@ -88,4 +89,7 @@ export interface Trade {
 
   /** Podsumowanie podatkowe (dodane przez mapper) */
   summary: TaxSummary;
+
+  /** Akcje na pozycjach (dodane przez mapper) */
+  actions: TradeAction[];
 }

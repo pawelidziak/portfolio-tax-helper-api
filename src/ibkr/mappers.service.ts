@@ -21,6 +21,7 @@ import {
   TradeCategoryEnum,
   NetAssetValue,
   OpenPosition,
+  TradeAction,
   TaxSummary,
   Dividend,
   Interest,
@@ -46,10 +47,8 @@ import {
 import {
   calculateDividendResult,
   calculateInterestResult,
-  calculateOptionResult,
-  calculateStocksResult,
   calculateBorrowResult,
-  calculateForexResult,
+  TradeTaxEngine,
 } from './calculations';
 
 // ============================================================================
@@ -84,11 +83,7 @@ export const IBKR_TRADE_CATEGORY_MAP: Record<string, TradeCategoryEnum> = {
 /**
  * Pusty TaxSummary używany gdy brak kursu NBP
  */
-const EMPTY_SUMMARY: TaxSummary = {
-  revenue: undefined,
-  cost: undefined,
-  income: undefined,
-};
+const EMPTY_SUMMARY: TaxSummary = { revenue: 0, cost: 0, income: 0 };
 
 // ============================================================================
 // SEKCJA 1: PROSTE MAPOWANIA 1:1
@@ -174,42 +169,61 @@ export const mapIBKRTradesToTrades = (
 ): Trade[] => {
   if (trades.length === 0) return [];
 
-  const mappedTrades = trades
-    .filter(trade => {
-      if (!trade.dateTime || trade.dateTime.trim() === '') {
-        console.warn(`⚠️  Pomijam transakcję z pustą datą: ${JSON.stringify(trade)}`);
-        return false;
-      }
-      return true;
-    })
-    .map(trade => {
-      const category = IBKR_TRADE_CATEGORY_MAP[trade.assetCategory] || TradeCategoryEnum.UNKNOWN;
-      const result = findNBPRate(
-        exchangeRatesCache,
-        trade.currency,
-        getPreviousDay(trade.dateTime)
-      );
-      const { date, rate } = result || {};
-      const summary = calculateTradeSummary(trade, category, rate);
+  // 1) Najpierw odfiltruj śmieci (brak daty)
+  const validTrades = trades.filter(trade => {
+    if (!trade.dateTime || trade.dateTime.trim() === '') {
+      console.warn(`⚠️  Pomijam transakcję z pustą datą: ${JSON.stringify(trade)}`);
+      return false;
+    }
+    return true;
+  });
 
-      return {
-        symbol: trade.symbol,
-        dateTime: trade.dateTime,
-        category,
-        currency: trade.currency,
-        quantity: trade.quantity,
-        tradePrice: trade.tradePrice,
-        closingPrice: trade.closingPrice,
-        proceeds: trade.proceeds,
-        commissionFee: trade.commissionFee,
-        basis: trade.basis,
-        realizedPL: trade.realizedPL,
-        mtmPL: trade.mtmPL,
-        code: trade.code,
-        exchangeRate: { date, rate },
-        summary,
-      };
-    });
+  // 2) POSORTUJ po dacie/czasie – to jest krytyczne dla FIFO
+  const sortedTrades = [...validTrades].sort((a, b) => {
+    const aTime = new Date(a.dateTime.replace(',', '')).getTime();
+    const bTime = new Date(b.dateTime.replace(',', '')).getTime();
+    return aTime - bTime;
+  });
+
+  // 3) Utwórz nowy engine dla tego batcha transakcji
+  const stockEngine = new TradeTaxEngine({ multiplier: 1 });
+  const optionEngine = new TradeTaxEngine({ multiplier: 100 });
+  const fxEngine = new TradeTaxEngine({ multiplier: 1 });
+
+  // 4) Mapuj i licz podatek
+  const mappedTrades = sortedTrades.map(trade => {
+    const category = IBKR_TRADE_CATEGORY_MAP[trade.assetCategory] || TradeCategoryEnum.UNKNOWN;
+
+    const result = findNBPRate(exchangeRatesCache, trade.currency, getPreviousDay(trade.dateTime));
+    const { date, rate } = result || {};
+    const summary = calculateTradeSummary(
+      trade,
+      category,
+      rate,
+      stockEngine,
+      optionEngine,
+      fxEngine
+    );
+
+    return {
+      symbol: trade.symbol,
+      dateTime: trade.dateTime,
+      category,
+      currency: trade.currency,
+      quantity: trade.quantity,
+      tradePrice: trade.tradePrice,
+      closingPrice: trade.closingPrice,
+      proceeds: trade.proceeds,
+      commissionFee: trade.commissionFee,
+      basis: trade.basis,
+      realizedPL: trade.realizedPL,
+      mtmPL: trade.mtmPL,
+      code: trade.code,
+      exchangeRate: { date, rate },
+      summary: summary.tax,
+      actions: summary?.actions || [],
+    };
+  });
 
   return mappedTrades;
 };
@@ -372,14 +386,18 @@ export const mapIBKRBorrowsToBorrows = (
 const calculateTradeSummary = (
   trade: IBKRTradeDto,
   category: TradeCategoryEnum,
-  nbpRate: undefined | number
-): TaxSummary => {
-  if (!nbpRate) return EMPTY_SUMMARY;
+  nbpRate: undefined | number,
+  stockEngine: TradeTaxEngine,
+  optionEngine: TradeTaxEngine,
+  fxEngine: TradeTaxEngine
+): { actions: TradeAction[]; tax: TaxSummary } => {
+  if (!nbpRate) return { actions: [], tax: EMPTY_SUMMARY };
 
-  if (category === TradeCategoryEnum.OPTIONS) return calculateOptionResult(trade, nbpRate);
-  if (category === TradeCategoryEnum.STOCKS) return calculateStocksResult(trade, nbpRate);
-  if (category === TradeCategoryEnum.FOREX) return calculateForexResult(trade, nbpRate);
-  return EMPTY_SUMMARY;
+  if (category === TradeCategoryEnum.OPTIONS) return optionEngine.processTrade(trade, nbpRate);
+  if (category === TradeCategoryEnum.STOCKS) return stockEngine.processTrade(trade, nbpRate);
+  if (category === TradeCategoryEnum.FOREX) return fxEngine.processTrade(trade, nbpRate);
+
+  return { actions: [], tax: EMPTY_SUMMARY };
 };
 
 /**
@@ -391,13 +409,7 @@ const calculateDividendSummary = (
 ): TaxSummary => {
   if (!nbpRate) return EMPTY_SUMMARY;
 
-  return calculateDividendResult({
-    ticker: dividend.symbol,
-    grossAmount: dividend.grossAmount,
-    withholdingTaxAmount: dividend.withholdingTaxAmount,
-    currency: dividend.currency,
-    fxRateToPLN: nbpRate,
-  });
+  return calculateDividendResult(dividend, nbpRate);
 };
 
 /**
@@ -409,15 +421,7 @@ const calculateInterestSummary = (
 ): TaxSummary => {
   if (!nbpRate) return EMPTY_SUMMARY;
 
-  const kind = interest.amount >= 0 ? 'POSITIVE' : 'NEGATIVE';
-  const amount = Math.abs(interest.amount);
-
-  return calculateInterestResult({
-    kind,
-    amount,
-    currency: interest.currency,
-    fxRateToPLN: nbpRate,
-  });
+  return calculateInterestResult(interest, nbpRate);
 };
 
 /**

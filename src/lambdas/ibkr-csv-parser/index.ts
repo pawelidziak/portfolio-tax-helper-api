@@ -7,6 +7,7 @@ import {
   mapIBKRBorrowsToBorrows,
   mapIBKRTradesToTrades,
   mapIBKRNetAssetValue,
+  aggregateResults,
   mapIBKRDeposits,
   parseIBKRCsv,
 } from '@ibkr';
@@ -70,10 +71,13 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         const deposits = mapIBKRDeposits(ibkrStatement.deposits);
         const mappedMetadata = mapIBKRStatementMetadata(metadata);
 
+        const periodTaxSummary = aggregateResults(trades, dividends, interests, borrows);
+
         const statement: StatementResponseDto = {
           generateDate: new Date().toISOString(),
           metadata: mappedMetadata,
           accountInformation,
+          periodTaxSummary,
           netAssetValue,
           openPositions,
           deposits,
