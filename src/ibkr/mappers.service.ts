@@ -200,8 +200,9 @@ export const mapIBKRTradesToTrades = (
     const result = findNBPRate(exchangeRatesCache, trade.currency, getPreviousDay(trade.dateTime));
     const { date, rate } = result || {};
 
-    let engineResult: { actions: TradeAction[]; tax: TaxSummary } = {
+    let engineResult: { actions: TradeAction[]; quantityAfter: number; tax: TaxSummary } = {
       actions: [],
+      quantityAfter: 0,
       tax: EMPTY_SUMMARY,
     };
 
@@ -220,6 +221,7 @@ export const mapIBKRTradesToTrades = (
       category,
       currency: trade.currency,
       quantity: trade.quantity,
+      quantityAfter: engineResult.quantityAfter,
       tradePrice: trade.tradePrice,
       closingPrice: trade.closingPrice,
       proceeds: trade.proceeds,

@@ -43,6 +43,12 @@ export interface Trade {
    */
   quantity: number;
 
+  /**
+   * Pozycja netto (signed) po wykonaniu tej transakcji dla danego symbolu.
+   * Dodatnia wartość = long, ujemna = short, zero = brak pozycji.
+   */
+  quantityAfter: number;
+
   /** Cena transakcji */
   tradePrice: number;
 

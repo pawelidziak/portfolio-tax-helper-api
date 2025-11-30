@@ -71,12 +71,15 @@ export class TradeTaxEngine {
   public processTrade(
     trade: IBKRTradeDto,
     fxRatePLN: number
-  ): { actions: TradeAction[]; tax: TaxSummary } {
+  ): { actions: TradeAction[]; quantityAfter: number; tax: TaxSummary } {
     const EMPTY_TAX: TaxSummary = { revenue: 0, cost: 0, income: 0 };
     const actions: TradeAction[] = [];
 
     if (!validateTrade(trade, fxRatePLN)) {
-      return { tax: EMPTY_TAX, actions };
+      // Dla nieprawidłowej transakcji pozycja się nie zmienia
+      const lots = this._getLots(trade.symbol);
+      const quantityAfter = calculateNetPosition(lots);
+      return { actions, quantityAfter, tax: EMPTY_TAX };
     }
 
     const { symbol, quantity, tradePrice, commissionFee } = trade;
@@ -98,7 +101,12 @@ export class TradeTaxEngine {
       tax = this._processSell(lots, symbol, qty, pricePLN, commissionPLN, actions);
     }
 
-    return { tax, actions };
+    // Pobierz pozycję netto po transakcji z ostatniej akcji (jeśli istnieje)
+    // Jeśli nie ma akcji, pozycja się nie zmieniła
+    const quantityAfter =
+      actions.length > 0 ? actions[actions.length - 1].afterQty : calculateNetPosition(lots);
+
+    return { actions, quantityAfter, tax };
   }
 
   /**
