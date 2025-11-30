@@ -1,9 +1,14 @@
+import { OperationCategoryEnum } from '../enums';
+
 /**
  * Depozyt/wypłata (model domenowy)
  *
  * Abstrakcja niezależna od źródła danych
  */
 export interface Deposit {
+  /** Kategoria operacji */
+  category: OperationCategoryEnum;
+
   /** Waluta depozytu/wypłaty */
   currency: string;
 

@@ -2,6 +2,7 @@ export * from './account-information.model';
 export * from './period-tax-summary.model';
 export * from './statement-metadata.model';
 export * from './net-asset-value.model';
+export * from './operation-item.model';
 export * from './exchange-rate.model';
 export * from './open-position.model';
 export * from './trade-action.model';

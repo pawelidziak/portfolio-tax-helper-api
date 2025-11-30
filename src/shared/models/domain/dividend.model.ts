@@ -1,5 +1,6 @@
 import { ExchangeRate } from './exchange-rate.model';
 import { TaxSummary } from './tax-summary.model';
+import { OperationCategoryEnum } from '../enums';
 
 /**
  * Dywidenda (model domenowy)
@@ -8,6 +9,9 @@ import { TaxSummary } from './tax-summary.model';
  * Zawiera kurs wymiany i podsumowanie podatkowe dodane przez mapper.
  */
 export interface Dividend {
+  /** Kategoria operacji */
+  category: OperationCategoryEnum;
+
   /** Symbol instrumentu (ticker) */
   symbol: string;
 

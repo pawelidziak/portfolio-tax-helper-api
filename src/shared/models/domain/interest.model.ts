@@ -1,5 +1,6 @@
 import { ExchangeRate } from './exchange-rate.model';
 import { TaxSummary } from './tax-summary.model';
+import { OperationCategoryEnum } from '../enums';
 
 /**
  * Odsetki (model domenowy)
@@ -8,6 +9,9 @@ import { TaxSummary } from './tax-summary.model';
  * Zawiera kurs wymiany i podsumowanie podatkowe dodane przez mapper.
  */
 export interface Interest {
+  /** Kategoria operacji */
+  category: OperationCategoryEnum;
+
   /** Data odsetek (Format: "YYYY-MM-DD") */
   date: string;
 

@@ -1,5 +1,5 @@
 import { ExchangeRate } from './exchange-rate.model';
-import { TradeCategoryEnum } from '../enums';
+import { OperationCategoryEnum } from '../enums';
 
 /**
  * Otwarta pozycja w portfelu (model domenowy)
@@ -16,9 +16,9 @@ export interface OpenPosition {
    * Kategoria aktywów
    *
    * Używana do identyfikacji typu pozycji.
-   * Każdy broker mapuje swoje kategorie na TradeCategoryEnum w swoim mapperze.
+   * Każdy broker mapuje swoje kategorie na OperationCategoryEnum w swoim mapperze.
    */
-  category: TradeCategoryEnum;
+  category: OperationCategoryEnum;
 
   /** Waluta pozycji */
   currency: string;

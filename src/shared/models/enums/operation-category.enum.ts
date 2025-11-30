@@ -1,7 +1,7 @@
 /**
  * Kategorie transakcji (model domenowy)
  *
- * Używane do określenia typu transakcji niezależnie od brokera.
+ * Używane do określenia typu operacji niezależnie od brokera.
  * Każdy broker może mieć swoje własne nazwy kategorii w źródle danych,
  * ale mapujemy je na ten wspólny enum.
  *
@@ -11,13 +11,13 @@
  *   i obsłuż ją w logice specyficznej dla tego brokera
  * - Przykłady przyszłych kategorii: FUTURES, BONDS, CRYPTO, etc.
  */
-export enum TradeCategoryEnum {
-  /** Nieznana kategoria (używana gdy broker ma kategorię, której nie obsługujemy) */
+export enum OperationCategoryEnum {
+  DIVIDEND = 'DIVIDEND',
+  INTEREST = 'INTEREST',
+  DEPOSIT = 'DEPOSIT',
   UNKNOWN = 'UNKNOWN',
-  /** Opcje (equity options, index options, etc.) */
   OPTIONS = 'OPTIONS',
-  /** Akcje i ETF */
+  BORROW = 'BORROW',
   STOCKS = 'STOCKS',
-  /** Wymiana walut (Forex) */
   FOREX = 'FOREX',
 }

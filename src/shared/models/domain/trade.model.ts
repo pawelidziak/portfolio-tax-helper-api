@@ -1,7 +1,7 @@
 import { ExchangeRate } from './exchange-rate.model';
 import { TradeAction } from './trade-action.model';
 import { TaxSummary } from './tax-summary.model';
-import { TradeCategoryEnum } from '../enums';
+import { OperationCategoryEnum } from '../enums';
 
 /**
  * Transakcja (model domenowy)
@@ -30,9 +30,9 @@ export interface Trade {
    * Kategoria transakcji
    *
    * Używana do wyboru odpowiedniej logiki obliczeniowej podatkowej.
-   * Każdy broker mapuje swoje kategorie na TradeCategoryEnum w swoim mapperze.
+   * Każdy broker mapuje swoje kategorie na OperationCategoryEnum w swoim mapperze.
    */
-  category: TradeCategoryEnum;
+  category: OperationCategoryEnum;
 
   /** Waluta transakcji */
   currency: string;

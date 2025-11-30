@@ -15,10 +15,10 @@
 // ============================================================================
 
 import {
+  OperationCategoryEnum,
   AccountInformation,
   NetAssetValueItem,
   StatementMetadata,
-  TradeCategoryEnum,
   NetAssetValue,
   OpenPosition,
   TradeAction,
@@ -56,28 +56,30 @@ import {
 // ============================================================================
 
 /**
- * Mapowanie kategorii transakcji z IBKR na TradeCategoryEnum
+ * Mapowanie kategorii transakcji z IBKR na OperationCategoryEnum
  *
  * ⚠️ PRZYGOTOWANIE NA PRZYSZŁOŚĆ:
  * - Każdy broker będzie miał swój własny mapper kategorii
  * - Inny broker może mieć inne nazwy kategorii (np. "Equity" zamiast "Stocks")
- * - Inny broker może mieć kategorie, które nie pasują do TradeCategoryEnum
- *   → wtedy użyj TradeCategoryEnum.UNKNOWN i obsłuż w logice specyficznej
+ * - Inny broker może mieć kategorie, które nie pasują do OperationCategoryEnum
+ *   → wtedy użyj OperationCategoryEnum.UNKNOWN i obsłuż w logice specyficznej
+ *
+ * !!!!WAŻNE!!!! Jeśli IBKR zmieni nazwy kategorii, trzeba to tutaj zaktualizować!
  *
  * Przykład dla przyszłego brokera:
  * ```typescript
- * export const OTHER_BROKER_TRADE_CATEGORY_MAP: Record<string, TradeCategoryEnum> = {
- *   'Equity': TradeCategoryEnum.STOCKS,
- *   'Options': TradeCategoryEnum.OPTIONS,
- *   'Currency': TradeCategoryEnum.FOREX,
- *   'Futures': TradeCategoryEnum.UNKNOWN, // jeśli nie obsługujemy jeszcze
+ * export const OTHER_BROKER_TRADE_CATEGORY_MAP: Record<string, OperationCategoryEnum> = {
+ *   'Equity': OperationCategoryEnum.STOCKS,
+ *   'Options': OperationCategoryEnum.OPTIONS,
+ *   'Currency': OperationCategoryEnum.FOREX,
+ *   'Futures': OperationCategoryEnum.UNKNOWN, // jeśli nie obsługujemy jeszcze
  * };
  * ```
  */
-export const IBKR_TRADE_CATEGORY_MAP: Record<string, TradeCategoryEnum> = {
-  Stocks: TradeCategoryEnum.STOCKS,
-  'Equity and Index Options': TradeCategoryEnum.OPTIONS,
-  Forex: TradeCategoryEnum.FOREX,
+export const IBKR_TRADE_CATEGORY_MAP: Record<string, OperationCategoryEnum> = {
+  Stocks: OperationCategoryEnum.STOCKS,
+  'Equity and Index Options': OperationCategoryEnum.OPTIONS,
+  Forex: OperationCategoryEnum.FOREX,
 };
 
 /**
@@ -133,6 +135,7 @@ export const mapIBKRNetAssetValue = (dto: IBKRNetAssetValueDto): NetAssetValue =
  */
 export const mapIBKRDeposits = (dtos: IBKRDepositDto[]): Deposit[] => {
   return dtos.map(dto => ({
+    category: OperationCategoryEnum.DEPOSIT,
     currency: dto.currency,
     settleDate: dto.settleDate,
     description: dto.description,
@@ -192,18 +195,24 @@ export const mapIBKRTradesToTrades = (
 
   // 4) Mapuj i licz podatek
   const mappedTrades = sortedTrades.map(trade => {
-    const category = IBKR_TRADE_CATEGORY_MAP[trade.assetCategory] || TradeCategoryEnum.UNKNOWN;
+    const category = IBKR_TRADE_CATEGORY_MAP[trade.assetCategory] || OperationCategoryEnum.UNKNOWN;
 
     const result = findNBPRate(exchangeRatesCache, trade.currency, getPreviousDay(trade.dateTime));
     const { date, rate } = result || {};
-    const summary = calculateTradeSummary(
-      trade,
-      category,
-      rate,
-      stockEngine,
-      optionEngine,
-      fxEngine
-    );
+
+    let engineResult: { actions: TradeAction[]; tax: TaxSummary } = {
+      actions: [],
+      tax: EMPTY_SUMMARY,
+    };
+
+    if (rate) {
+      if (category === OperationCategoryEnum.OPTIONS)
+        engineResult = optionEngine.processTrade(trade, rate);
+      if (category === OperationCategoryEnum.STOCKS)
+        engineResult = stockEngine.processTrade(trade, rate);
+      if (category === OperationCategoryEnum.FOREX)
+        engineResult = fxEngine.processTrade(trade, rate);
+    }
 
     return {
       symbol: trade.symbol,
@@ -220,8 +229,8 @@ export const mapIBKRTradesToTrades = (
       mtmPL: trade.mtmPL,
       code: trade.code,
       exchangeRate: { date, rate },
-      summary: summary.tax,
-      actions: summary?.actions || [],
+      summary: engineResult.tax,
+      actions: engineResult.actions,
     };
   });
 
@@ -259,6 +268,7 @@ export const mapIBKRDividendsToDividends = (
       const summary = calculateDividendSummary(dividend, rate);
 
       return {
+        category: OperationCategoryEnum.DIVIDEND,
         symbol: dividend.symbol,
         date: dividend.date,
         currency: dividend.currency,
@@ -304,6 +314,7 @@ export const mapIBKRInterestsToInterests = (
       const summary = calculateInterestSummary(interest, rate);
 
       return {
+        category: OperationCategoryEnum.INTEREST,
         date: interest.date,
         currency: interest.currency,
         description: interest.description,
@@ -347,6 +358,7 @@ export const mapIBKRBorrowsToBorrows = (
       const summary = calculateBorrowSummary(borrow, rate);
 
       return {
+        category: OperationCategoryEnum.BORROW,
         symbol: borrow.symbol,
         valueDate: borrow.valueDate,
         currency: borrow.currency,
@@ -367,38 +379,6 @@ export const mapIBKRBorrowsToBorrows = (
 // ============================================================================
 // SEKCJA 3: FUNKCJE POMOCNICZE - OBLICZANIE PODSUMOWAŃ PODATKOWYCH
 // ============================================================================
-
-/**
- * Oblicza przychód, koszt i dochód dla transakcji (Pure Function)
- *
- * Routing do właściwej logiki w zależności od kategorii aktywów:
- * - OPTIONS: skomplikowana logika księgowa (premia, assignment, closing)
- * - STOCKS: prostsza logika (tylko realized P/L przy closing)
- * - FOREX: wymiana walut nie generuje przychodu/kosztu podatkowego
- *
- * ⚠️ PRZYGOTOWANIE NA PRZYSZŁOŚĆ:
- * - Ta funkcja jest specyficzna dla IBKR (używa IBKRTradeDto)
- * - Inny broker będzie miał swoją własną implementację calculateTradeSummary
- * - Logika obliczeniowa może różnić się między brokerami nawet dla tej samej kategorii
- *   (np. inny broker może inaczej liczyć realized P/L dla opcji)
- * - Struktura folderów: src/{broker}/calculations/ zawiera logikę specyficzną dla brokera
- */
-const calculateTradeSummary = (
-  trade: IBKRTradeDto,
-  category: TradeCategoryEnum,
-  nbpRate: undefined | number,
-  stockEngine: TradeTaxEngine,
-  optionEngine: TradeTaxEngine,
-  fxEngine: TradeTaxEngine
-): { actions: TradeAction[]; tax: TaxSummary } => {
-  if (!nbpRate) return { actions: [], tax: EMPTY_SUMMARY };
-
-  if (category === TradeCategoryEnum.OPTIONS) return optionEngine.processTrade(trade, nbpRate);
-  if (category === TradeCategoryEnum.STOCKS) return stockEngine.processTrade(trade, nbpRate);
-  if (category === TradeCategoryEnum.FOREX) return fxEngine.processTrade(trade, nbpRate);
-
-  return { actions: [], tax: EMPTY_SUMMARY };
-};
 
 /**
  * Oblicza przychód, koszt i dochód dla dywidendy (Pure Function)
@@ -452,8 +432,9 @@ export const mapIBKROpenPositionsToOpenPositions = (
   const previousDay: string = getPreviousDay(today);
 
   return positions.map(position => {
-    // Mapuj kategorię z IBKR na TradeCategoryEnum
-    const category = IBKR_TRADE_CATEGORY_MAP[position.assetCategory] || TradeCategoryEnum.UNKNOWN;
+    // Mapuj kategorię z IBKR na OperationCategoryEnum
+    const category =
+      IBKR_TRADE_CATEGORY_MAP[position.assetCategory] || OperationCategoryEnum.UNKNOWN;
 
     const result = findNBPRate(exchangeRatesCache, position.currency, previousDay);
     const { date, rate } = result || {};

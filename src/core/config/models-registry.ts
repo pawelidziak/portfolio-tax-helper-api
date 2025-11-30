@@ -10,13 +10,14 @@
  */
 
 import {
+  OperationCategoryEnum,
   StatementResponseDto,
   AccountInformation,
   NBPRateResponseDto,
-  TradeCategoryEnum,
   StatementMetadata,
   PeriodTaxSummary,
   NetAssetValue,
+  OperationItem,
   CurrencyEnum,
   ExchangeRate,
   OpenPosition,
@@ -31,7 +32,7 @@ import {
 
 export const ModelRegistry = {
   // Enums
-  TradeCategoryEnum: {} as TradeCategoryEnum,
+  OperationCategoryEnum: {} as OperationCategoryEnum,
   CurrencyEnum: {} as CurrencyEnum,
 
   // DTOs
@@ -43,6 +44,7 @@ export const ModelRegistry = {
   StatementMetadata: {} as StatementMetadata,
   PeriodTaxSummary: {} as PeriodTaxSummary,
   NetAssetValue: {} as NetAssetValue,
+  OperationItem: {} as OperationItem,
   ExchangeRate: {} as ExchangeRate,
   OpenPosition: {} as OpenPosition,
   TradeAction: {} as TradeAction,
