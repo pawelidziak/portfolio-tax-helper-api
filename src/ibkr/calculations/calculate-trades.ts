@@ -3,39 +3,41 @@ import { IBKRTradeDto } from '@ibkr';
 
 /**
  * ============================================
- *        UNIFIED TRADE TAX ENGINE
+ *        UNIFIED TRADE TAX ENGINE (PL)
  * ============================================
  *
- * Zunifikowana logika obliczania podatków dla transakcji (stocks i options).
- * Używa metody FIFO do zarządzania pozycjami (lots).
+ * NOWA SEMANTYKA (PODATKOWA):
+ * --------------------------------------------
+ * 1) Przychód (PIT) ZAWSZE BRUTTO:
+ *    - LONG: cena sprzedaży * ilość
+ *    - SHORT: pełna premia z otwarcia * ilość
  *
- * STRUKTURA:
- * - Lot: reprezentuje jedną pozycję (long lub short) z ceną w PLN
- * - FIFO: pierwsze otwarte pozycje są zamykane jako pierwsze
- * - Long: dodatnia qty (kupione akcje/kontrakty)
- * - Short: ujemna qty (sprzedane akcje/kontrakty bez posiadania)
+ * 2) Koszt (PIT) zawiera:
+ *    - LONG:
+ *        * cena zakupu (brutto, bez prowizji) * ilość
+ *        * + prowizja OTWARCIA longa
+ *        * + prowizja ZAMKNIĘCIA longa
+ *    - SHORT:
+ *        * cena odkupu * ilość
+ *        * + prowizja OTWARCIA shorta
+ *        * + prowizja ZAMKNIĘCIA shorta
  *
- * LOGIKA:
- * 1. BUY (quantity > 0):
- *    - Jeśli są shorty → zamyka shorty (realizuje zysk/stratę)
- *      - Jeśli kupujemy więcej niż shortów → nadwyżka otwiera longa
- *      - Prowizja dzielona proporcjonalnie:
- *        - część do zamknięcia shortów (od razu jako cost)
- *        - część do nowego longa (wliczona w costPerLot)
- *    - Jeśli nie ma shortów → otwiera longa (prowizja w costPerLot)
+ * 3) Dochód (PIT) = przychód - koszt
  *
- * 2. SELL (quantity < 0):
- *    - Jeśli są longi → zamyka longi (realizuje zysk/stratę)
- *      - Jeśli sprzedajemy więcej niż longów → nadwyżka otwiera short
- *      - Prowizja dzielona proporcjonalnie:
- *        - część do zamknięcia longa (cost)
- *        - część do nowego shorta (cost w tym samym trade)
- *    - Jeśli nie ma longów → otwiera short (prowizja jest kosztem trade'u)
+ * 4) Zdarzenie podatkowe powstaje TYLKO przy zamknięciu
+ *    (CLOSE_LONG / CLOSE_SHORT, częściowo lub w całości).
+ *    Czyste otwarcia (BUY long / SELL short, gdy nic nie zamykają)
+ *    nie generują TaxSummary (wracamy {0,0,0}), ale prowizja
+ *    jest zapamiętana w locie i zostanie doliczona do kosztu
+ *    przy zamknięciu.
  *
- * PROWIZJE:
- * - Wszystkie prowizje są kosztem (zgodnie z PIT)
- * - Cena rynkowa (tradePrice) jest zawsze „czysta” – bez prowizji
- * - Wyjątek: przy otwarciu LONG prowizja wchodzi w costPerLot (podstawa kosztowa)
+ * 5) LOT przechowuje:
+ *    - qty: dodatnia = long, ujemna = short
+ *    - pricePerLotPLN: cena bazowa (brutto, bez prowizji) na 1 sztukę
+ *        * LONG: cena zakupu
+ *        * SHORT: premia brutto z otwarcia
+ *    - openCommissionPerLotPLN: prowizja otwarcia na 1 sztukę
+ *        * używana przy zamknięciu, żeby dodać ją do kosztu
  */
 
 // ============================================
@@ -45,8 +47,21 @@ import { IBKRTradeDto } from '@ibkr';
 interface Lot {
   /** Ilość: dodatnia = long, ujemna = short */
   qty: number;
-  /** Cena w PLN z dnia otwarcia pozycji (po kursie NBP z tego dnia) */
+  /**
+   * Cena BAZOWA na 1 sztukę w PLN (BRUTTO, bez prowizji):
+   *  - dla LONG: cena zakupu
+   *  - dla SHORT: premia brutto z otwarcia
+   */
   pricePerLotPLN: number;
+  /**
+   * Prowizja OTWARCIA na 1 sztukę (PLN)
+   *  - dla LONG: prowizja z BUY
+   *  - dla SHORT: prowizja z SELL
+   *
+   * Jest doliczana do kosztu przy zamknięciu (proporcjonalnie
+   * do zamykanej ilości).
+   */
+  openCommissionPerLotPLN: number;
 }
 
 interface TradeConfig {
@@ -76,7 +91,6 @@ export class TradeTaxEngine {
     const actions: TradeAction[] = [];
 
     if (!validateTrade(trade, fxRatePLN)) {
-      // Dla nieprawidłowej transakcji pozycja się nie zmienia
       const lots = this._getLots(trade.symbol);
       const quantityAfter = calculateNetPosition(lots);
       return { actions, quantityAfter, tax: EMPTY_TAX };
@@ -91,18 +105,16 @@ export class TradeTaxEngine {
 
     let tax: TaxSummary = EMPTY_TAX;
 
-    // BUY
+    // BUY (quantity > 0) → zamykamy shorty, ewentualnie otwieramy longa
     if (quantity > 0) {
       tax = this._processBuy(lots, symbol, qty, pricePLN, commissionPLN, actions);
     }
 
-    // SELL
+    // SELL (quantity < 0) → zamykamy longi, ewentualnie otwieramy shorta
     if (quantity < 0) {
       tax = this._processSell(lots, symbol, qty, pricePLN, commissionPLN, actions);
     }
 
-    // Pobierz pozycję netto po transakcji z ostatniej akcji (jeśli istnieje)
-    // Jeśli nie ma akcji, pozycja się nie zmieniła
     const quantityAfter =
       actions.length > 0 ? actions[actions.length - 1].afterQty : calculateNetPosition(lots);
 
@@ -110,128 +122,115 @@ export class TradeTaxEngine {
   }
 
   /**
-   * Przetwarza transakcję BUY
-   *
-   * Scenariusze:
-   * - są shorty:
-   *    - zamykamy min(qty, totalShort)
-   *    - jeśli qty > totalShort → nadwyżka otwiera longa
-   *    - prowizja dzielona proporcjonalnie
-   * - brak shortów:
-   *    - otwieramy longa (prowizja w costPerLot)
+   * BUY:
+   *  - jeśli są shorty → zamykamy (częściowo/całkowicie) shorty metodą FIFO,
+   *                      prowizja częściowo idzie do kosztu zamknięcia,
+   *                      reszta do nowych longów (jako openCommissionPerLot).
+   *  - jeśli brak shortów → otwieramy longa (prowizja trafia do lota).
    */
   private _processBuy(
     lots: Lot[],
     symbol: string,
     qty: number,
-    pricePLN: number,
+    pricePerLotPLN: number,
     commissionPLN: number,
     actions: TradeAction[]
   ): TaxSummary {
     const EMPTY: TaxSummary = { revenue: 0, cost: 0, income: 0 };
     const totalShort = calculateTotalShort(lots);
 
-    // Jeśli są shorty, zamykamy je (częściowo lub w całości)
+    // Są shorty → zamykamy je najpierw
     if (totalShort > 0) {
       const qtyToClose = Math.min(totalShort, qty);
       const qtyToOpenLong = qty - qtyToClose;
 
-      // Proporcjonalny podział prowizji
+      // Dzielenie prowizji: część do zamknięcia, część do nowych longów
       const commissionForClose = qtyToClose > 0 ? (commissionPLN * qtyToClose) / qty : 0;
       const commissionForOpen = commissionPLN - commissionForClose;
 
-      // Zamykamy shorty po czystej cenie rynkowej
-      // Generuje akcje CLOSE_SHORT z beforeQty i afterQty
-      const closeRes = closeShorts(lots, symbol, qtyToClose, pricePLN, actions);
+      // Zamykamy shorty (bez prowizji zamknięcia – tę dodamy niżej)
+      const closeRes = closeShorts(lots, symbol, qtyToClose, pricePerLotPLN, actions);
 
-      // Prowizja przypisana do zamykanego kawałka
+      // Prowizja ZAMKNIĘCIA shorta → koszt podatkowy
       if (commissionForClose !== 0) {
         closeRes.cost = (closeRes.cost ?? 0) + commissionForClose;
       }
 
-      // Jeśli nadwyżka → otwieramy longa
-      // Ważne: afterQty z ostatniej akcji CLOSE_SHORT powinno być równe beforeQty z akcji OPEN_LONG
-      // To pozwala wykryć częściowe zamknięcie i otwarcie w jednej transakcji
+      // Nadwyżka → otwieramy longa (prowizja otwarcia w locie)
       if (qtyToOpenLong > 0) {
-        const costPerLotPLN =
-          pricePLN + (commissionForOpen !== 0 ? commissionForOpen / qtyToOpenLong : 0);
-        openLong(lots, symbol, qtyToOpenLong, costPerLotPLN, actions);
+        const openCommissionPerLotPLN =
+          commissionForOpen !== 0 ? commissionForOpen / qtyToOpenLong : 0;
+        openLong(lots, symbol, qtyToOpenLong, pricePerLotPLN, openCommissionPerLotPLN, actions);
       }
 
       closeRes.income = (closeRes.revenue ?? 0) - (closeRes.cost ?? 0);
       return closeRes;
     }
 
-    // Brak shortów → otwieramy longa
-    const costPerLotPLN = pricePLN + (commissionPLN !== 0 && qty > 0 ? commissionPLN / qty : 0);
-    openLong(lots, symbol, qty, costPerLotPLN, actions);
+    // Brak shortów → czyste otwarcie longa (brak zdarzenia podatkowego)
+    if (qty > 0) {
+      const openCommissionPerLotPLN = commissionPLN !== 0 ? commissionPLN / qty : 0;
+      openLong(lots, symbol, qty, pricePerLotPLN, openCommissionPerLotPLN, actions);
+    }
 
     return EMPTY;
   }
 
   /**
-   * Przetwarza transakcję SELL
-   *
-   * Scenariusze:
-   * - są longi:
-   *    - zamykamy min(qty, totalLong)
-   *    - jeśli qty > totalLong → nadwyżka otwiera short
-   *    - prowizja dzielona proporcjonalnie
-   * - brak longów:
-   *    - otwieramy short (prowizja jako koszt trade'u)
+   * SELL:
+   *  - jeśli są longi → zamykamy je metodą FIFO,
+   *                     prowizja częściowo idzie do kosztu zamknięcia,
+   *                     reszta do nowych shortów (jako openCommissionPerLot).
+   *  - jeśli brak longów → otwieramy shorta (prowizja w locie).
    */
   private _processSell(
     lots: Lot[],
     symbol: string,
     qty: number,
-    pricePLN: number,
+    pricePerLotPLN: number,
     commissionPLN: number,
     actions: TradeAction[]
   ): TaxSummary {
+    const EMPTY: TaxSummary = { revenue: 0, cost: 0, income: 0 };
     const totalLong = calculateTotalLong(lots);
 
+    // Są longi → zamykamy je najpierw
     if (totalLong > 0) {
       const qtyToClose = Math.min(totalLong, qty);
       const qtyToOpenShort = qty - qtyToClose;
 
-      // Proporcjonalny podział prowizji
       const commissionForClose = qtyToClose > 0 ? (commissionPLN * qtyToClose) / qty : 0;
       const commissionForOpen = commissionPLN - commissionForClose;
 
-      // Zamykamy longi po cenie rynkowej
-      // Generuje akcje CLOSE_LONG z beforeQty i afterQty
-      const closeRes = closeLongs(lots, symbol, qtyToClose, pricePLN, actions);
+      // Zamykamy longi (bez prowizji zamknięcia – tę dodamy niżej)
+      const closeRes = closeLongs(lots, symbol, qtyToClose, pricePerLotPLN, actions);
 
-      // Prowizja za zamknięcie longa
+      // Prowizja ZAMKNIĘCIA longa → koszt podatkowy
       if (commissionForClose !== 0) {
         closeRes.cost = (closeRes.cost ?? 0) + commissionForClose;
       }
 
-      // Jeśli nadwyżka → otwieramy short
-      // Ważne: afterQty z ostatniej akcji CLOSE_LONG powinno być równe beforeQty z akcji OPEN_SHORT
-      // To pozwala wykryć częściowe zamknięcie i otwarcie w jednej transakcji
+      // Nadwyżka → otwieramy shorta (prowizja otwarcia w locie)
       if (qtyToOpenShort > 0) {
-        openShort(lots, symbol, qtyToOpenShort, pricePLN, actions);
-
-        // Prowizja za otwarcie shorta też jest kosztem tego trade'u
-        if (commissionForOpen !== 0) {
-          closeRes.cost = (closeRes.cost ?? 0) + commissionForOpen;
-        }
+        const openCommissionPerLotPLN =
+          commissionForOpen !== 0 ? commissionForOpen / qtyToOpenShort : 0;
+        openShort(lots, symbol, qtyToOpenShort, pricePerLotPLN, openCommissionPerLotPLN, actions);
       }
 
       closeRes.income = (closeRes.revenue ?? 0) - (closeRes.cost ?? 0);
       return closeRes;
     }
 
-    // Brak longów → otwieramy short
-    openShort(lots, symbol, qty, pricePLN, actions);
-    // Prowizja jest kosztem (short nie generuje przychodu przy otwarciu)
-    return { revenue: 0, cost: commissionPLN, income: -commissionPLN };
+    // Brak longów → czyste otwarcie shorta (brak zdarzenia podatkowego)
+    if (qty > 0) {
+      const openCommissionPerLotPLN = commissionPLN !== 0 ? commissionPLN / qty : 0;
+      openShort(lots, symbol, qty, pricePerLotPLN, openCommissionPerLotPLN, actions);
+    }
+
+    return EMPTY;
   }
 
-  /**
-   * Pobiera lub tworzy tablicę lotów dla symbolu
-   */
+  /** Pobiera lub tworzy tablicę lotów dla symbolu */
   private _getLots(symbol: string): Lot[] {
     let lots = this._lotsBySymbol.get(symbol);
     if (!lots) {
@@ -247,36 +246,29 @@ export class TradeTaxEngine {
 // ============================================
 
 /**
- * Zamyka shorty metodą FIFO
+ * Zamyka shorty metodą FIFO.
  *
- * WAŻNE: Każdy lot jest zamykany osobno, nawet jeśli zamykamy wszystko w jednej transakcji.
- * Powód: Każdy lot ma inną cenę bazową (lotPricePerLotPLN), która zależy od ceny zakupu
- * i kursu NBP z dnia otwarcia pozycji. Dla celów podatkowych musimy wiedzieć, które
- * akcje/kontrakty zostały zamknięte i po jakiej cenie bazowej, aby poprawnie obliczyć
- * koszt i dochód dla każdego lotu osobno.
+ * Dla każdego lota short:
+ *  - lot.pricePerLotPLN          = premia BRUTTO na 1 sztukę
+ *  - lot.openCommissionPerLotPLN = prowizja OTWARCIA na 1 sztukę
  *
- * Przykład: Jeśli mamy 2 loty (300 szt. po 2230.77 PLN i 200 szt. po 2232.35 PLN)
- * i sprzedajemy 500 szt. w jednej transakcji, otrzymamy 2 akcje CLOSE_SHORT:
- * - jedna dla 300 szt. z ceną bazową 2230.77 PLN
- * - druga dla 200 szt. z ceną bazową 2232.35 PLN
- *
- * @param lots - tablica lotów (modyfikowana)
- * @param qtyToClose - ilość do zamknięcia (<= całkowita ilość shortów)
- * @param closePricePLN - cena zamknięcia w PLN (czysta, bez prowizji)
- * @returns Przychód, koszt, dochód
+ * Przy zamknięciu:
+ *  - revenue += qty * lot.pricePerLotPLN
+ *  - cost    += qty * closePricePLN
+ *  - cost    += qty * lot.openCommissionPerLotPLN   (prowizja otwarcia)
+ *  Prowizja ZAMKNIĘCIA dodawana jest wyżej w _processBuy.
  */
 const closeShorts = (
   lots: Lot[],
   symbol: string,
   qtyToClose: number,
-  closePricePLN: number,
+  closePricePerLotPLN: number,
   actions: TradeAction[]
 ): CloseResult => {
   let remaining = qtyToClose;
   let revenue = 0;
   let cost = 0;
 
-  // Łączna pozycja przed pierwszym zamknięciem
   let netPosition = calculateNetPosition(lots);
 
   for (let i = 0; i < lots.length && remaining > 0; i++) {
@@ -285,28 +277,28 @@ const closeShorts = (
 
     const shortQty = Math.abs(lot.qty);
     const closeQty = Math.min(remaining, shortQty);
-
     if (closeQty <= 0) continue;
 
     const beforeQty = netPosition;
 
-    // Przychód: premia z otwarcia shorta (realizowana przy zamknięciu)
+    // Przychód: pełna premia z otwarcia (BRUTTO)
     revenue += closeQty * lot.pricePerLotPLN;
-    // Koszt: odkupienie shorta po cenie rynkowej
-    cost += closeQty * closePricePLN;
+
+    // Koszt: odkupienie po aktualnej cenie + prowizja OTWARCIA
+    cost += closeQty * closePricePerLotPLN;
+    cost += closeQty * lot.openCommissionPerLotPLN;
 
     // Aktualizacja lota i pozycji
     lot.qty += closeQty; // short zbliża się do zera
-    netPosition += closeQty; // pozycja (ujemna) rośnie w stronę zera
+    netPosition += closeQty;
 
     const afterQty = netPosition;
 
-    // Tworzymy osobną akcję dla każdego lotu (każdy ma inną cenę bazową)
     actions.push({
       type: 'CLOSE_SHORT',
       symbol,
       qty: closeQty,
-      tradePricePerLotPLN: closePricePLN,
+      tradePricePerLotPLN: closePricePerLotPLN,
       lotPricePerLotPLN: lot.pricePerLotPLN,
       beforeQty,
       afterQty,
@@ -315,7 +307,7 @@ const closeShorts = (
     remaining -= closeQty;
   }
 
-  // Usuwamy puste loty z początku tablicy
+  // Usuwamy puste loty z początku
   while (lots.length > 0 && lots[0].qty === 0) {
     lots.shift();
   }
@@ -324,29 +316,23 @@ const closeShorts = (
 };
 
 /**
- * Zamyka longi metodą FIFO
+ * Zamyka longi metodą FIFO.
  *
- * WAŻNE: Każdy lot jest zamykany osobno, nawet jeśli zamykamy wszystko w jednej transakcji.
- * Powód: Każdy lot ma inną cenę bazową (lotPricePerLotPLN), która zależy od ceny zakupu
- * i kursu NBP z dnia otwarcia pozycji. Dla celów podatkowych musimy wiedzieć, które
- * akcje/kontrakty zostały zamknięte i po jakiej cenie bazowej, aby poprawnie obliczyć
- * koszt i dochód dla każdego lotu osobno.
+ * Dla każdego lota long:
+ *  - lot.pricePerLotPLN          = cena zakupu (BRUTTO, bez prowizji)
+ *  - lot.openCommissionPerLotPLN = prowizja OTWARCIA na 1 sztukę
  *
- * Przykład: Jeśli mamy 2 loty (300 szt. po 2230.77 PLN i 200 szt. po 2232.35 PLN)
- * i sprzedajemy 500 szt. w jednej transakcji, otrzymamy 2 akcje CLOSE_LONG:
- * - jedna dla 300 szt. z ceną bazową 2230.77 PLN
- * - druga dla 200 szt. z ceną bazową 2232.35 PLN
- *
- * @param lots - tablica lotów (modyfikowana)
- * @param qtyToClose - ilość do zamknięcia (<= całkowita ilość longów)
- * @param closePricePLN - cena zamknięcia w PLN (czysta, bez prowizji)
- * @returns Przychód, koszt, dochód
+ * Przy zamknięciu:
+ *  - revenue += qty * closePricePLN
+ *  - cost    += qty * lot.pricePerLotPLN
+ *  - cost    += qty * lot.openCommissionPerLotPLN   (prowizja otwarcia)
+ *  Prowizja ZAMKNIĘCIA dodawana jest wyżej w _processSell.
  */
 const closeLongs = (
   lots: Lot[],
   symbol: string,
   qtyToClose: number,
-  closePricePLN: number,
+  closePricePerLotPLN: number,
   actions: TradeAction[]
 ): CloseResult => {
   let remaining = qtyToClose;
@@ -360,15 +346,16 @@ const closeLongs = (
     if (lot.qty <= 0) continue; // pomijamy shorty
 
     const closeQty = Math.min(remaining, lot.qty);
-
     if (closeQty <= 0) continue;
 
     const beforeQty = netPosition;
 
-    // Przychód: sprzedaż longa
-    revenue += closeQty * closePricePLN;
-    // Koszt: cena z otwarcia longa
+    // Przychód: sprzedaż longa po aktualnej cenie
+    revenue += closeQty * closePricePerLotPLN;
+
+    // Koszt: cena zakupu + prowizja OTWARCIA (proporcjonalnie)
     cost += closeQty * lot.pricePerLotPLN;
+    cost += closeQty * lot.openCommissionPerLotPLN;
 
     // Aktualizacja lota i pozycji
     lot.qty -= closeQty;
@@ -376,12 +363,11 @@ const closeLongs = (
 
     const afterQty = netPosition;
 
-    // Tworzymy osobną akcję dla każdego lotu (każdy ma inną cenę bazową)
     actions.push({
       type: 'CLOSE_LONG',
       symbol,
       qty: closeQty,
-      tradePricePerLotPLN: closePricePLN,
+      tradePricePerLotPLN: closePricePerLotPLN,
       lotPricePerLotPLN: lot.pricePerLotPLN,
       beforeQty,
       afterQty,
@@ -390,7 +376,7 @@ const closeLongs = (
     remaining -= closeQty;
   }
 
-  // Usuwamy puste loty z początku tablicy
+  // Usuwamy puste loty z początku
   while (lots.length > 0 && lots[0].qty === 0) {
     lots.shift();
   }
@@ -398,9 +384,7 @@ const closeLongs = (
   return { revenue, cost, income: revenue - cost };
 };
 
-/**
- * Waliduje dane wejściowe transakcji
- */
+/** Waliduje dane wejściowe transakcji */
 const validateTrade = (trade: IBKRTradeDto, fxRatePLN: number): boolean => {
   if (!fxRatePLN || fxRatePLN <= 0) return false;
   if (!trade.symbol || !trade.quantity) return false;
@@ -409,20 +393,25 @@ const validateTrade = (trade: IBKRTradeDto, fxRatePLN: number): boolean => {
 };
 
 /**
- * Otwiera nową pozycję short
+ * Otwiera nową pozycję short.
+ *
+ * - qty > 0 oznacza, że użytkownik sprzedał qty sztuk (short)
+ * - pricePerLotPLN          = premia BRUTTO na 1 sztukę
+ * - openCommissionPerLotPLN = prowizja OTWARCIA na 1 sztukę
  */
 const openShort = (
   lots: Lot[],
   symbol: string,
   qty: number,
-  revenuePerLotPLN: number,
+  pricePerLotPLN: number,
+  openCommissionPerLotPLN: number,
   actions: TradeAction[]
 ): void => {
   if (qty <= 0) return;
 
   const beforeQty = calculateNetPosition(lots);
 
-  lots.push({ qty: -qty, pricePerLotPLN: revenuePerLotPLN });
+  lots.push({ qty: -qty, pricePerLotPLN, openCommissionPerLotPLN });
 
   const afterQty = beforeQty - qty;
 
@@ -430,37 +419,32 @@ const openShort = (
     type: 'OPEN_SHORT',
     symbol,
     qty,
-    tradePricePerLotPLN: revenuePerLotPLN,
+    tradePricePerLotPLN: pricePerLotPLN,
     beforeQty,
     afterQty,
   });
 };
 
 /**
- * Oblicza prowizję w PLN
- */
-const calculateCommissionPLN = (
-  commissionFee: undefined | number | null,
-  fxRatePLN: number
-): number => {
-  return Math.abs(commissionFee ?? 0) * fxRatePLN;
-};
-
-/**
- * Otwiera nową pozycję long
+ * Otwiera nową pozycję long.
+ *
+ * - qty > 0
+ * - pricePerLotPLN          = cena zakupu BRUTTO (bez prowizji) na 1 szt.
+ * - openCommissionPerLotPLN = prowizja OTWARCIA na 1 sztukę
  */
 const openLong = (
   lots: Lot[],
   symbol: string,
   qty: number,
-  costPerLotPLN: number,
+  pricePerLotPLN: number,
+  openCommissionPerLotPLN: number,
   actions: TradeAction[]
 ): void => {
   if (qty <= 0) return;
 
   const beforeQty = calculateNetPosition(lots);
 
-  lots.push({ qty, pricePerLotPLN: costPerLotPLN });
+  lots.push({ qty, pricePerLotPLN, openCommissionPerLotPLN });
 
   const afterQty = beforeQty + qty;
 
@@ -468,36 +452,36 @@ const openLong = (
     type: 'OPEN_LONG',
     symbol,
     qty,
-    tradePricePerLotPLN: costPerLotPLN,
+    tradePricePerLotPLN: pricePerLotPLN,
     beforeQty,
     afterQty,
   });
 };
 
-/**
- * Oblicza cenę w PLN z uwzględnieniem mnożnika
- */
+/** Oblicza prowizję w PLN (zawsze dodatnią) */
+const calculateCommissionPLN = (
+  commissionFee: undefined | number | null,
+  fxRatePLN: number
+): number => {
+  return Math.abs(commissionFee ?? 0) * fxRatePLN;
+};
+
+/** Oblicza cenę w PLN z uwzględnieniem mnożnika (np. 100 dla opcji) */
 const calculatePricePLN = (tradePrice: number, fxRatePLN: number, multiplier: number): number => {
   return tradePrice * fxRatePLN * multiplier;
 };
 
-/**
- * Oblicza całkowitą ilość shortów dla symbolu
- */
+/** Oblicza całkowitą ilość shortów (wartość dodatnia) */
 const calculateTotalShort = (lots: Lot[]): number => {
   return lots.filter(l => l.qty < 0).reduce((sum, lot) => sum + Math.abs(lot.qty), 0);
 };
 
-/**
- * Oblicza całkowitą ilość longów dla symbolu
- */
+/** Oblicza całkowitą ilość longów */
 const calculateTotalLong = (lots: Lot[]): number => {
   return lots.filter(l => l.qty > 0).reduce((sum, lot) => sum + lot.qty, 0);
 };
 
-/**
- * Oblicza łączną (signed) pozycję dla symbolu
- */
+/** Oblicza łączną (signed) pozycję dla symbolu */
 const calculateNetPosition = (lots: Lot[]): number => {
   return lots.reduce((sum, lot) => sum + lot.qty, 0);
 };

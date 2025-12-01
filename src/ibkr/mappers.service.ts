@@ -21,7 +21,6 @@ import {
   StatementMetadata,
   NetAssetValue,
   OpenPosition,
-  TradeAction,
   TaxSummary,
   Dividend,
   Interest,
@@ -202,11 +201,7 @@ export const mapIBKRTradesToTrades = (
     const result = findNBPRate(exchangeRatesCache, trade.currency, getPreviousDay(trade.dateTime));
     const { date, rate } = result || {};
 
-    let engineResult: { actions: TradeAction[]; quantityAfter: number; tax: TaxSummary } = {
-      actions: [],
-      quantityAfter: 0,
-      tax: EMPTY_SUMMARY,
-    };
+    let engineResult;
 
     if (rate) {
       if (category === OperationCategoryEnum.OPTIONS)
@@ -221,7 +216,6 @@ export const mapIBKRTradesToTrades = (
       category,
       currency: trade.currency,
       quantity: trade.quantity,
-      quantityAfter: engineResult.quantityAfter,
       tradePrice: trade.tradePrice,
       closingPrice: trade.closingPrice,
       proceeds: trade.proceeds,
@@ -231,8 +225,9 @@ export const mapIBKRTradesToTrades = (
       mtmPL: trade.mtmPL,
       code: trade.code,
       exchangeRate: { date, rate },
-      summary: engineResult.tax,
-      actions: engineResult.actions,
+      summary: engineResult?.tax || EMPTY_SUMMARY,
+      actions: engineResult?.actions || [],
+      quantityAfter: engineResult?.quantityAfter,
     };
   });
 
