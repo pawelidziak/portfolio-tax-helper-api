@@ -1,4 +1,5 @@
 import { TaxSummary } from '@shared/models';
+import { roundToDecimals } from '@utils';
 import { IBKRInterestDto } from '@ibkr';
 
 export function calculateInterestResult(
@@ -9,7 +10,8 @@ export function calculateInterestResult(
 
   if (amount > 0) {
     // dodatnie odsetki (cash credit interest)
-    const revenue = amount * fxRateToPLN;
+    // Zaokrąglamy do 2 miejsc po przecinku (zgodnie z praktyką podatkową)
+    const revenue = roundToDecimals(amount * fxRateToPLN);
     const cost = 0;
     const income = revenue;
 
@@ -18,9 +20,10 @@ export function calculateInterestResult(
 
   if (amount < 0) {
     // ujemne odsetki (margin / debit interest)
+    // Zaokrąglamy do 2 miejsc po przecinku (zgodnie z praktyką podatkową)
     const revenue = 0;
-    const cost = Math.abs(amount) * fxRateToPLN;
-    const income = revenue - cost; // ujemny
+    const cost = roundToDecimals(Math.abs(amount) * fxRateToPLN);
+    const income = roundToDecimals(revenue - cost); // ujemny
 
     return { revenue, cost, income };
   }

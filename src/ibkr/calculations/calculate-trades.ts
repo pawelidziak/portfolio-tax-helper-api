@@ -1,4 +1,5 @@
 import { TradeAction, TaxSummary } from '@shared/models';
+import { roundToDecimals } from '@utils';
 import { IBKRTradeDto } from '@ibkr';
 
 /**
@@ -145,8 +146,10 @@ export class TradeTaxEngine {
       const qtyToOpenLong = qty - qtyToClose;
 
       // Dzielenie prowizji: część do zamknięcia, część do nowych longów
-      const commissionForClose = qtyToClose > 0 ? (commissionPLN * qtyToClose) / qty : 0;
-      const commissionForOpen = commissionPLN - commissionForClose;
+      // Zaokrąglamy do 2 miejsc po przecinku
+      const commissionForClose =
+        qtyToClose > 0 ? roundToDecimals((commissionPLN * qtyToClose) / qty) : 0;
+      const commissionForOpen = roundToDecimals(commissionPLN - commissionForClose);
 
       // Zamykamy shorty (bez prowizji zamknięcia – tę dodamy niżej)
       const closeRes = closeShorts(lots, symbol, qtyToClose, pricePerLotPLN, actions);
@@ -159,17 +162,21 @@ export class TradeTaxEngine {
       // Nadwyżka → otwieramy longa (prowizja otwarcia w locie)
       if (qtyToOpenLong > 0) {
         const openCommissionPerLotPLN =
-          commissionForOpen !== 0 ? commissionForOpen / qtyToOpenLong : 0;
+          commissionForOpen !== 0 ? roundToDecimals(commissionForOpen / qtyToOpenLong) : 0;
         openLong(lots, symbol, qtyToOpenLong, pricePerLotPLN, openCommissionPerLotPLN, actions);
       }
 
-      closeRes.income = (closeRes.revenue ?? 0) - (closeRes.cost ?? 0);
+      // Zaokrąglamy wyniki końcowe do 2 miejsc po przecinku
+      closeRes.revenue = roundToDecimals(closeRes.revenue ?? 0);
+      closeRes.cost = roundToDecimals(closeRes.cost ?? 0);
+      closeRes.income = roundToDecimals(closeRes.revenue - closeRes.cost);
       return closeRes;
     }
 
     // Brak shortów → czyste otwarcie longa (brak zdarzenia podatkowego)
     if (qty > 0) {
-      const openCommissionPerLotPLN = commissionPLN !== 0 ? commissionPLN / qty : 0;
+      const openCommissionPerLotPLN =
+        commissionPLN !== 0 ? roundToDecimals(commissionPLN / qty) : 0;
       openLong(lots, symbol, qty, pricePerLotPLN, openCommissionPerLotPLN, actions);
     }
 
@@ -199,8 +206,11 @@ export class TradeTaxEngine {
       const qtyToClose = Math.min(totalLong, qty);
       const qtyToOpenShort = qty - qtyToClose;
 
-      const commissionForClose = qtyToClose > 0 ? (commissionPLN * qtyToClose) / qty : 0;
-      const commissionForOpen = commissionPLN - commissionForClose;
+      // Dzielenie prowizji: część do zamknięcia, część do nowych shortów
+      // Zaokrąglamy do 2 miejsc po przecinku
+      const commissionForClose =
+        qtyToClose > 0 ? roundToDecimals((commissionPLN * qtyToClose) / qty) : 0;
+      const commissionForOpen = roundToDecimals(commissionPLN - commissionForClose);
 
       // Zamykamy longi (bez prowizji zamknięcia – tę dodamy niżej)
       const closeRes = closeLongs(lots, symbol, qtyToClose, pricePerLotPLN, actions);
@@ -213,17 +223,21 @@ export class TradeTaxEngine {
       // Nadwyżka → otwieramy shorta (prowizja otwarcia w locie)
       if (qtyToOpenShort > 0) {
         const openCommissionPerLotPLN =
-          commissionForOpen !== 0 ? commissionForOpen / qtyToOpenShort : 0;
+          commissionForOpen !== 0 ? roundToDecimals(commissionForOpen / qtyToOpenShort) : 0;
         openShort(lots, symbol, qtyToOpenShort, pricePerLotPLN, openCommissionPerLotPLN, actions);
       }
 
-      closeRes.income = (closeRes.revenue ?? 0) - (closeRes.cost ?? 0);
+      // Zaokrąglamy wyniki końcowe do 2 miejsc po przecinku
+      closeRes.revenue = roundToDecimals(closeRes.revenue ?? 0);
+      closeRes.cost = roundToDecimals(closeRes.cost ?? 0);
+      closeRes.income = roundToDecimals(closeRes.revenue - closeRes.cost);
       return closeRes;
     }
 
     // Brak longów → czyste otwarcie shorta (brak zdarzenia podatkowego)
     if (qty > 0) {
-      const openCommissionPerLotPLN = commissionPLN !== 0 ? commissionPLN / qty : 0;
+      const openCommissionPerLotPLN =
+        commissionPLN !== 0 ? roundToDecimals(commissionPLN / qty) : 0;
       openShort(lots, symbol, qty, pricePerLotPLN, openCommissionPerLotPLN, actions);
     }
 
@@ -312,7 +326,12 @@ const closeShorts = (
     lots.shift();
   }
 
-  return { revenue, cost, income: revenue - cost };
+  // Zaokrąglamy wyniki do 2 miejsc po przecinku (zgodnie z praktyką podatkową)
+  revenue = roundToDecimals(revenue);
+  cost = roundToDecimals(cost);
+  const income = roundToDecimals(revenue - cost);
+
+  return { revenue, cost, income };
 };
 
 /**
@@ -381,7 +400,12 @@ const closeLongs = (
     lots.shift();
   }
 
-  return { revenue, cost, income: revenue - cost };
+  // Zaokrąglamy wyniki do 2 miejsc po przecinku (zgodnie z praktyką podatkową)
+  revenue = roundToDecimals(revenue);
+  cost = roundToDecimals(cost);
+  const income = roundToDecimals(revenue - cost);
+
+  return { revenue, cost, income };
 };
 
 /** Waliduje dane wejściowe transakcji */
@@ -458,17 +482,25 @@ const openLong = (
   });
 };
 
-/** Oblicza prowizję w PLN (zawsze dodatnią) */
+/**
+ * Oblicza prowizję w PLN (zawsze dodatnią).
+ * Prowizja jest zaokrąglana do 2 miejsc po przecinku (zgodnie z praktyką podatkową).
+ */
 const calculateCommissionPLN = (
   commissionFee: undefined | number | null,
   fxRatePLN: number
 ): number => {
-  return Math.abs(commissionFee ?? 0) * fxRatePLN;
+  const commission = Math.abs(commissionFee ?? 0) * fxRatePLN;
+  return roundToDecimals(commission);
 };
 
-/** Oblicza cenę w PLN z uwzględnieniem mnożnika (np. 100 dla opcji) */
+/**
+ * Oblicza cenę w PLN z uwzględnieniem mnożnika (np. 100 dla opcji).
+ * Cena jest zaokrąglana do 2 miejsc po przecinku (zgodnie z praktyką podatkową).
+ */
 const calculatePricePLN = (tradePrice: number, fxRatePLN: number, multiplier: number): number => {
-  return tradePrice * fxRatePLN * multiplier;
+  const price = tradePrice * fxRatePLN * multiplier;
+  return roundToDecimals(price);
 };
 
 /** Oblicza całkowitą ilość shortów (wartość dodatnia) */
