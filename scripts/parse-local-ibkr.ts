@@ -3,14 +3,19 @@ import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
 
 import {
+  aggregateTaxFromRealizedTradesByCategory,
+  mapIBKRRealizedTradesToRealizedTrades,
   mapIBKROpenPositionsToOpenPositions,
   mapIBKRDividendsToDividends,
   mapIBKRInterestsToInterests,
   mapIBKRBorrowsToBorrows,
+  parseRealizedTradesCsv,
   mapIBKRTradesToTrades,
   parseIBKRCsv,
 } from '../src/ibkr';
+import { OperationCategoryEnum } from '../src/shared/models';
 import { getExchangeRates } from '../src/shared/api/nbp.api';
+import { extractDate } from '../src/shared/utils/date.utils';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -47,11 +52,11 @@ const main = async () => {
     const openPositions = mapIBKROpenPositionsToOpenPositions(
       ibkrStatement.openPositions,
       exchangeRatesCache,
-      metadata.maxDate || ''
     );
 
-    console.log(openPositions);
 
+    const options = trades.filter(trade => trade.category === OperationCategoryEnum.OPTIONS);
+    // console.log(options);
 
 
     // const totalRevenue = x.reduce((acc, trade) => acc + (trade?.summary?.revenue ?? 0), 0);
@@ -72,4 +77,26 @@ const main = async () => {
   }
 };
 
-main();
+const main2 = async () => {
+  const file = getFileContent(process.argv[2] || 'example_data/trades.csv');
+  const realizedTrades = parseRealizedTradesCsv(file);
+
+  const dates = realizedTrades.map(trade => trade.dateTime).sort( (a, b) => new Date(a).getTime() - new Date(b).getTime() );
+  const minDate = extractDate(dates[0]);
+  const maxDate = extractDate(dates[dates.length - 1]);
+
+  const exchangeRatesCache = await getExchangeRates(
+    new Set(['USD', 'PLN']),
+    minDate,
+    maxDate,
+    10
+  );
+
+  const realizedTradesWithExchangeRates = mapIBKRRealizedTradesToRealizedTrades(realizedTrades, exchangeRatesCache);
+
+  console.log(realizedTradesWithExchangeRates);
+  const byCategory = aggregateTaxFromRealizedTradesByCategory(realizedTradesWithExchangeRates);
+  console.log(byCategory);
+};
+
+main2();
