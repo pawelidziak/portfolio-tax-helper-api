@@ -24,7 +24,7 @@ export const lambdaFactory = (
   };
 
   const lambda = new NodejsFunction(scope, `${config.name}Lambda`, {
-    runtime: Runtime.NODEJS_20_X,
+    runtime: Runtime.NODEJS_24_X,
     handler: 'handler',
     entry: path.join(process.cwd(), 'src', 'lambdas', config.entry),
     environment: {
