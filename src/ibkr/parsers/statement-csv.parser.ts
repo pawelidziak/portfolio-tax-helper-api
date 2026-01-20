@@ -57,8 +57,11 @@ export const parseIBKRCsv = async (input: string | Buffer): Promise<IBKRStatemen
   if (!depositsSection) console.error('Nie znaleziono sekcji "Deposits & Withdrawals" w CSV');
   if (!tradesSection) console.error('Nie znaleziono sekcji "Trades" w CSV');
 
+  const accountInformation = parseAccountInformationSection(accountInformationSection);
   // Parsuj metadane (zakres dat i waluty)
   const metadata = parseStatementMetadata(statementSection, cashReportSection);
+  // dodaj base currency do zbioru walut (jest w innej sekcji)
+  metadata.currencies.add(accountInformation?.baseCurrency);
 
   return {
     deposits: depositsSection ? parseDepositsSection(depositsSection) : [],
@@ -66,7 +69,7 @@ export const parseIBKRCsv = async (input: string | Buffer): Promise<IBKRStatemen
     interests: interestSection ? parseInterestSection(interestSection) : [],
     dividends: parseDividendsSection(interestSection, withholdingTaxSection),
     borrows: borrowFeeDetailsSection ? parseBorrowsSection(borrowFeeDetailsSection) : [],
-    accountInformation: parseAccountInformationSection(accountInformationSection),
+    accountInformation,
     netAssetValue: parseNetAssetValueSection(netAssetValueSection),
     openPositions: openPositionsSection ? parseOpenPositionsSection(openPositionsSection) : [],
     metadata,
