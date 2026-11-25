@@ -6,6 +6,6 @@
   "tabWidth": 2,
   "useTabs": false,
   "arrowParens": "avoid",
-  "endOfLine": "crlf",
+  "endOfLine": "auto",
   "plugins": ["prettier-plugin-sort-imports"]
 }
