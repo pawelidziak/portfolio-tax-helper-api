@@ -6,6 +6,7 @@ export interface ApiGatewayFactoryProps {
   environment: string; // Environment name (dev, test, prod)
   enableApiKey?: boolean; // Whether to enable API Key protection
   apiName?: string; // Custom API name (default: LambdaApi-{environment})
+  allowedOrigins?: string[]; // CORS origins (default: all origins)
 }
 
 export interface ApiGatewayFactoryResult {
@@ -34,7 +35,7 @@ export function apiGatewayFactory(
       stageName: props.environment, // Use environment name as stage (dev, test, prod)
     },
     defaultCorsPreflightOptions: {
-      allowOrigins: Cors.ALL_ORIGINS,
+      allowOrigins: props.allowedOrigins ?? Cors.ALL_ORIGINS,
       allowMethods: Cors.ALL_METHODS,
       allowHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
     },
