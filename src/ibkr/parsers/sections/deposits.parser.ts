@@ -1,10 +1,10 @@
 /**
- * Parser dla sekcji Deposits & Withdrawals
+ * Parser for the Deposits & Withdrawals section
  *
- * Odpowiedzialność:
- * - Konwersja CsvSection na IBKRDepositDto[]
- * - Mapowanie kolumn
- * - Filtrowanie tylko rekordów danych (pomijamy Total/Total in USD z CSV)
+ * Responsibilities:
+ * - Converting CsvSection to IBKRDepositDto[]
+ * - Column mapping
+ * - Keeping only data records (skipping Total/Total in USD from the CSV)
  */
 
 import { createDataMap, removeQuotes, parseNumber, getValue } from '@utils';
@@ -13,7 +13,7 @@ import { CsvSection } from '@shared/models';
 import { IBKRDepositDto } from '../../models/dto';
 
 /**
- * Nazwy kolumn w sekcji Deposits & Withdrawals pliku CSV IBKR
+ * Column names in the Deposits & Withdrawals section of the IBKR CSV file
  */
 enum CsvColumnNames {
   SETTLE_DATE = 'Settle Date',
@@ -23,7 +23,7 @@ enum CsvColumnNames {
 }
 
 /**
- * Parsuje sekcję Deposits & Withdrawals na IBKRDepositDto[]
+ * Parses the Deposits & Withdrawals section into IBKRDepositDto[]
  */
 export const parseDepositsSection = (section: CsvSection): IBKRDepositDto[] => {
   const deposits: IBKRDepositDto[] = [];
@@ -37,8 +37,8 @@ export const parseDepositsSection = (section: CsvSection): IBKRDepositDto[] => {
 };
 
 /**
- * Parsuje pojedynczy wiersz na IBKRDepositDto
- * (pomijamy Total/Total in USD)
+ * Parses a single row into IBKRDepositDto
+ * (skipping Total/Total in USD)
  */
 const parseDepositRow = (headers: string[], rowData: string[]): IBKRDepositDto | null => {
   const dataMap = createDataMap(headers, rowData);
@@ -48,7 +48,7 @@ const parseDepositRow = (headers: string[], rowData: string[]): IBKRDepositDto |
   const description = removeQuotes(getValue(dataMap, CsvColumnNames.DESCRIPTION));
   const amount = parseNumber(getValue(dataMap, CsvColumnNames.AMOUNT));
 
-  // Pomijamy wiersze Total/Total in USD (nie mają currency lub settleDate)
+  // Skip Total/Total in USD rows (they have no currency or settleDate)
   if (!currency || !settleDate || amount === undefined) return null;
 
   return {

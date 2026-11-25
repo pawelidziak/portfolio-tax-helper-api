@@ -1,43 +1,43 @@
 /**
- * Model reprezentujący dywidendy z sekcji Interest i Withholding Tax w raporcie IBKR
+ * Model representing dividends from the Interest and Withholding Tax sections of the IBKR report
  *
- * To są CZYSTE dane z CSV, bez żadnego wzbogacenia.
+ * This is PURE data from the CSV, with no enrichment.
  */
 
 /**
- * Pojedyncza dywidenda z raportu IBKR
- * DTO = Data Transfer Object - dane bezpośrednio z parsowania CSV
+ * A single dividend from the IBKR report
+ * DTO = Data Transfer Object - data straight from CSV parsing
  *
- * Dywidendy mogą być w sekcji "Interest" (kwota brutto) i "Withholding Tax" (podatek u źródła).
- * Te dwa wpisy muszą być połączone w jeden rekord dywidendy.
+ * Dividends can appear in the "Interest" section (gross amount) and the "Withholding Tax" section (withholding tax).
+ * These two entries must be merged into a single dividend record.
  */
 export interface IBKRDividendDto {
-  /** Waluta dywidendy: USD, PLN, etc. */
+  /** Dividend currency: USD, PLN, etc. */
   currency: string;
 
-  /** Data dywidendy (Format: "YYYY-MM-DD") */
+  /** Dividend date (Format: "YYYY-MM-DD") */
   date: string;
 
-  /** Symbol instrumentu (ticker) */
+  /** Instrument symbol (ticker) */
   symbol: string;
 
   /**
-   * Kwota brutto dywidendy (przed podatkiem u źródła)
-   * Z sekcji "Interest" - zawsze dodatnia
+   * Gross dividend amount (before withholding tax)
+   * From the "Interest" section - always positive
    */
   grossAmount: number;
 
   /**
-   * Podatek u źródła (withholding tax)
-   * Z sekcji "Withholding Tax" - zawsze ujemna (bo to koszt)
-   * Może być 0 jeśli nie ma podatku
+   * Withholding tax
+   * From the "Withholding Tax" section - always negative (because it is a cost)
+   * Can be 0 if there is no tax
    */
   withholdingTaxAmount: number;
 
   /**
-   * Kwota netto dywidendy (po podatku u źródła)
-   * Obliczana jako: grossAmount + withholdingTaxAmount
-   * (withholdingTaxAmount jest ujemne, więc to jest odejmowanie)
+   * Net dividend amount (after withholding tax)
+   * Calculated as: grossAmount + withholdingTaxAmount
+   * (withholdingTaxAmount is negative, so this is a subtraction)
    */
   netAmount: number;
 }

@@ -1,6 +1,6 @@
 /**
  * DTO odpowiedzi z API NBP
- * Reprezentuje strukturę danych otrzymanych z zewnętrznego API NBP
+ * Represents the data structure received from the external NBP API
  */
 export interface NBPRateResponseDto {
   table: string;

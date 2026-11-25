@@ -9,8 +9,8 @@ export function calculateInterestResult(
   const amount = interest.amount ?? 0;
 
   if (amount > 0) {
-    // dodatnie odsetki (cash credit interest)
-    // Zaokrąglamy do 2 miejsc po przecinku (zgodnie z praktyką podatkową)
+    // positive interest (cash credit interest)
+    // Round to 2 decimal places (per tax practice)
     const revenue = roundToDecimals(amount * fxRateToPLN);
     const cost = 0;
     const income = revenue;
@@ -19,11 +19,11 @@ export function calculateInterestResult(
   }
 
   if (amount < 0) {
-    // ujemne odsetki (margin / debit interest)
-    // Zaokrąglamy do 2 miejsc po przecinku (zgodnie z praktyką podatkową)
+    // negative interest (margin / debit interest)
+    // Round to 2 decimal places (per tax practice)
     const revenue = 0;
     const cost = roundToDecimals(Math.abs(amount) * fxRateToPLN);
-    const income = roundToDecimals(revenue - cost); // ujemny
+    const income = roundToDecimals(revenue - cost); // negative
 
     return { revenue, cost, income };
   }

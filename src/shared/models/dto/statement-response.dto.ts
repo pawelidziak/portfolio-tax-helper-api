@@ -12,30 +12,30 @@ import {
 } from '../domain';
 
 /**
- * Statement Response DTO - odpowiedź API
+ * Statement Response DTO - API response
  *
- * To jest DTO zwracane przez endpoint API.
- * Zawiera dane wzbogacone o kursy wymiany i podsumowania podatkowe.
+ * This is the DTO returned by the API endpoint.
+ * Contains data enriched with exchange rates and tax summaries.
  *
- * Używa modeli domenowych, które są niezależne od źródła danych (IBKR, inny broker, etc.)
+ * Uses domain models that are independent of the data source (IBKR, another broker, etc.)
  *
- * **Struktura danych:**
- * - Operacje są zwracane w osobnych tablicach pogrupowanych per typ (trades, dividends, interests, borrows, deposits)
- * - Frontend powinien łączyć i sortować te dane lokalnie według potrzeb UI
- * - Każdy typ operacji ma swoje pole daty:
+ * **Data structure:**
+ * - Operations are returned in separate arrays grouped by type (trades, dividends, interests, borrows, deposits)
+ * - The frontend should merge and sort this data locally according to UI needs
+ * - Each operation type has its own date field:
  *   - Trade: `dateTime` (format: "YYYY-MM-DD, HH:MM:SS")
  *   - Dividend: `date` (format: "YYYY-MM-DD")
  *   - Interest: `date` (format: "YYYY-MM-DD")
  *   - Borrow: `valueDate` (format: "YYYY-MM-DD")
  *   - Deposit: `settleDate` (format: "YYYY-MM-DD")
  *
- * **Przykład użycia na FE:**
+ * **Usage example on the FE:**
  * ```typescript
  * const allOperations = [...trades, ...dividends, ...interests, ...borrows, ...deposits]
  *   .sort((a, b) => {
  *     const dateA = getOperationDate(a); // helper function
  *     const dateB = getOperationDate(b);
- *     return dateB.getTime() - dateA.getTime(); // sortowanie malejąco
+ *     return dateB.getTime() - dateA.getTime(); // sort descending
  *   });
  * ```
  */

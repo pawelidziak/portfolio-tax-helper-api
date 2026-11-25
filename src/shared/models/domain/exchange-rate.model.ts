@@ -1,17 +1,17 @@
 /**
- * Kurs wymiany dla transakcji
+ * Exchange rate for a transaction
  */
 export interface ExchangeRate {
   /**
-   * NBP Date - Data kursu NBP dla transakcji
-   * Data kursu NBP z DNIA POPRZEDNIEGO względem daty transakcji.
+   * NBP Date - NBP rate date for the transaction
+   * NBP rate date from the DAY BEFORE the transaction date.
    */
   date?: string;
 
   /**
-   * NBP Exchange Rate - Kurs NBP z dnia poprzedniego
-   * Kurs NBP z dnia poprzedniego względem daty transakcji.
-   * Używany do przeliczenia przychodów i kosztów na PLN.
+   * NBP Exchange Rate - NBP rate from the previous day
+   * NBP rate from the day before the transaction date.
+   * Used to convert revenue and cost to PLN.
    */
   rate?: number;
 }

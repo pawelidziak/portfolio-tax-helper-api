@@ -1,7 +1,7 @@
 /**
- * Informacje o koncie (model domenowy)
+ * Account information (domain model)
  *
- * Abstrakcja niezależna od źródła danych (IBKR, inny broker, etc.)
+ * Abstraction independent of the data source (IBKR, another broker, etc.)
  */
 export interface AccountInformation {
   name: string;

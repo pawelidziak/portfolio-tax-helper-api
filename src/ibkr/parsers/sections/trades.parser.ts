@@ -1,10 +1,10 @@
 /**
- * Parser dla sekcji Trades
+ * Parser for the Trades section
  *
- * Odpowiedzialność:
- * - Konwersja CsvSection na TradeRecord[]
- * - Mapowanie kolumn (obsługa różnych nazw)
- * - Filtrowanie tylko Order (pomijamy SubTotal/Total z CSV)
+ * Responsibilities:
+ * - Converting CsvSection to TradeRecord[]
+ * - Column mapping (handles different names)
+ * - Keeping only Order rows (skipping SubTotal/Total from the CSV)
  */
 
 import { parseDateTime, createDataMap, removeQuotes, parseNumber, getValue } from '@utils';
@@ -13,7 +13,7 @@ import { CurrencyEnum, CsvSection } from '@shared/models';
 import { IBKRTradeDto } from '../../models/dto';
 
 /**
- * Nazwy kolumn w sekcji Trades pliku CSV IBKR
+ * Column names in the Trades section of the IBKR CSV file
  */
 enum CsvColumnNames {
   DATA_DISCRIMINATOR = 'DataDiscriminator',
@@ -41,7 +41,7 @@ enum DataDiscriminatorEnum {
 }
 
 /**
- * Parsuje sekcję Trades na IBKRTradeDTO[]
+ * Parses the Trades section into IBKRTradeDTO[]
  */
 export const parseTradesSection = (section: CsvSection): IBKRTradeDto[] => {
   const trades: IBKRTradeDto[] = [];
@@ -55,8 +55,8 @@ export const parseTradesSection = (section: CsvSection): IBKRTradeDto[] => {
 };
 
 /**
- * Parsuje pojedynczy wiersz na IBKRTradeDto
- * (tylko Order, pomijamy SubTotal/Total)
+ * Parses a single row into IBKRTradeDto
+ * (Order only, skipping SubTotal/Total)
  */
 const parseTradeRow = (headers: string[], rowData: string[]): IBKRTradeDto | null => {
   const dataMap = createDataMap(headers, rowData);

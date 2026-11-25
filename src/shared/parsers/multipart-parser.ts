@@ -14,7 +14,7 @@ export interface ParsedFile {
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 /**
- * Schemat Zod do walidacji ParsedFile
+ * Zod schema for validating ParsedFile
  */
 export const parsedCsvSchema = z.object({
   content: z
@@ -74,9 +74,9 @@ export async function parseMultipartFormData(event: APIGatewayProxyEvent): Promi
     busboy.on('file', (_fieldname, file, info) => {
       fileCount++;
 
-      // Jeśli wykryto więcej niż jeden plik, odrzuć resztę i rzuć błąd
+      // If more than one file is detected, discard the rest and throw an error
       if (fileCount > 1) {
-        file.resume(); // Odrzuć resztę pliku
+        file.resume(); // Discard the rest of the file
         reject(new ValidationError(ErrorMessages.MULTIPLE_FILES_NOT_ALLOWED));
         return;
       }
@@ -90,9 +90,9 @@ export async function parseMultipartFormData(event: APIGatewayProxyEvent): Promi
       file.on('data', (chunk: Buffer) => {
         totalSize += chunk.length;
 
-        // Kontrola rozmiaru podczas wczytywania - przerwij jeśli przekracza limit
+        // Size check while reading - abort if the limit is exceeded
         if (totalSize > MAX_FILE_SIZE) {
-          file.resume(); // Odrzuć resztę pliku
+          file.resume(); // Discard the rest of the file
           reject(new ValidationError(ErrorMessages.FILE_SIZE_EXCEEDS_LIMIT));
           return;
         }

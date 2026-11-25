@@ -3,34 +3,34 @@ import { TaxSummary } from './tax-summary.model';
 import { OperationCategoryEnum } from '../enums';
 
 /**
- * Odsetki (model domenowy)
+ * Interest (domain model)
  *
- * Abstrakcja niezależna od źródła danych (IBKR, inny broker, etc.)
- * Zawiera kurs wymiany i podsumowanie podatkowe dodane przez mapper.
+ * Abstraction independent of the data source (IBKR, another broker, etc.)
+ * Contains the exchange rate and tax summary added by the mapper.
  */
 export interface Interest {
-  /** Kategoria operacji */
+  /** Operation category */
   category: OperationCategoryEnum;
 
-  /** Data odsetek (Format: "YYYY-MM-DD") */
+  /** Interest date (Format: "YYYY-MM-DD") */
   date: string;
 
-  /** Waluta odsetek */
+  /** Interest currency */
   currency: string;
 
-  /** Opis odsetek */
+  /** Interest description */
   description: string;
 
   /**
-   * Kwota odsetek
-   * Dodatnia dla credit interest (broker płaci)
-   * Ujemna dla debit interest (broker pobiera - margin interest)
+   * Interest amount
+   * Positive for credit interest (broker pays)
+   * Negative for debit interest (broker charges - margin interest)
    */
   amount: number;
 
-  /** Kurs wymiany (dodane przez mapper) */
+  /** Exchange rate (added by the mapper) */
   exchangeRate: ExchangeRate;
 
-  /** Podsumowanie podatkowe (dodane przez mapper) */
+  /** Tax summary (added by the mapper) */
   summary: TaxSummary;
 }

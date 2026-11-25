@@ -1,13 +1,13 @@
 /**
  * IBKR Mappers Service
  *
- * Mapuje IBKR DTOs na modele domenowe z kursami NBP i podsumowaniami podatkowymi.
+ * Maps IBKR DTOs to domain models with NBP rates and tax summaries.
  *
- * Struktura:
- * - Sekcja 1: Proste mapowania 1:1 (AccountInformation, NetAssetValue, Deposit, StatementMetadata)
- * - Sekcja 2: Mapowania z obliczeniami podatkowymi (Trade, Dividend, Interest, Borrow)
+ * Structure:
+ * - Section 1: Simple 1:1 mappings (AccountInformation, NetAssetValue, Deposit, StatementMetadata)
+ * - Section 2: Mappings with tax calculations (Trade, Dividend, Interest, Borrow)
  *
- * Wszystkie mappery używają wspólnego cache kursów NBP przekazanego z lambda handlera.
+ * All mappers share a common NBP rates cache passed from the lambda handler.
  */
 
 // ============================================================================
@@ -55,23 +55,23 @@ import {
 // ============================================================================
 
 /**
- * Mapowanie kategorii transakcji z IBKR na OperationCategoryEnum
+ * Mapping of IBKR trade categories to OperationCategoryEnum
  *
- * ⚠️ PRZYGOTOWANIE NA PRZYSZŁOŚĆ:
- * - Każdy broker będzie miał swój własny mapper kategorii
- * - Inny broker może mieć inne nazwy kategorii (np. "Equity" zamiast "Stocks")
- * - Inny broker może mieć kategorie, które nie pasują do OperationCategoryEnum
- *   → wtedy użyj OperationCategoryEnum.UNKNOWN i obsłuż w logice specyficznej
+ * ⚠️ PREPARING FOR THE FUTURE:
+ * - Each broker will have its own category mapper
+ * - Another broker may use different category names (e.g. "Equity" instead of "Stocks")
+ * - Another broker may have categories that do not fit OperationCategoryEnum
+ *   → then use OperationCategoryEnum.UNKNOWN and handle it in broker-specific logic
  *
- * !!!!WAŻNE!!!! Jeśli IBKR zmieni nazwy kategorii, trzeba to tutaj zaktualizować!
+ * !!!!IMPORTANT!!!! If IBKR changes category names, this must be updated here!
  *
- * Przykład dla przyszłego brokera:
+ * Example for a future broker:
  * ```typescript
  * export const OTHER_BROKER_TRADE_CATEGORY_MAP: Record<string, OperationCategoryEnum> = {
  *   'Equity': OperationCategoryEnum.STOCKS,
  *   'Options': OperationCategoryEnum.OPTIONS,
  *   'Currency': OperationCategoryEnum.FOREX,
- *   'Futures': OperationCategoryEnum.UNKNOWN, // jeśli nie obsługujemy jeszcze
+ *   'Futures': OperationCategoryEnum.UNKNOWN, // if not supported yet
  * };
  * ```
  */
@@ -82,17 +82,17 @@ export const IBKR_TRADE_CATEGORY_MAP: Record<string, OperationCategoryEnum> = {
 };
 
 /**
- * Pusty TaxSummary używany gdy brak kursu NBP
+ * Empty TaxSummary used when the NBP rate is missing
  */
 const EMPTY_SUMMARY: TaxSummary = { revenue: 0, cost: 0, income: 0 };
 
 // ============================================================================
-// SEKCJA 1: PROSTE MAPOWANIA 1:1
+// SECTION 1: SIMPLE 1:1 MAPPINGS
 // ============================================================================
-// Mapowania dla modeli, które nie wymagają dodatkowych obliczeń podatkowych
+// Mappings for models that need no additional tax calculations
 
 /**
- * Mapuje IBKRAccountInformationDto na AccountInformation
+ * Maps IBKRAccountInformationDto to AccountInformation
  */
 export const mapIBKRAccountInformation = (dto: IBKRAccountInformationDto): AccountInformation => {
   return {
@@ -106,7 +106,7 @@ export const mapIBKRAccountInformation = (dto: IBKRAccountInformationDto): Accou
 };
 
 /**
- * Mapuje IBKRNetAssetValueItemDto na NetAssetValueItem
+ * Maps IBKRNetAssetValueItemDto to NetAssetValueItem
  */
 const mapIBKRNetAssetValueItem = (dto: IBKRNetAssetValueItemDto): NetAssetValueItem => {
   return {
@@ -120,7 +120,7 @@ const mapIBKRNetAssetValueItem = (dto: IBKRNetAssetValueItemDto): NetAssetValueI
 };
 
 /**
- * Mapuje IBKRNetAssetValueDto na NetAssetValue
+ * Maps IBKRNetAssetValueDto to NetAssetValue
  */
 export const mapIBKRNetAssetValue = (dto: IBKRNetAssetValueDto): NetAssetValue => {
   return {
@@ -130,7 +130,7 @@ export const mapIBKRNetAssetValue = (dto: IBKRNetAssetValueDto): NetAssetValue =
 };
 
 /**
- * Mapuje IBKRDepositDto[] na Deposit[]
+ * Maps IBKRDepositDto[] to Deposit[]
  */
 export const mapIBKRDeposits = (dtos: IBKRDepositDto[]): Deposit[] => {
   return dtos.map(dto => ({
@@ -143,7 +143,7 @@ export const mapIBKRDeposits = (dtos: IBKRDepositDto[]): Deposit[] => {
 };
 
 /**
- * Mapuje IBKRStatementMetadata na StatementMetadata
+ * Maps IBKRStatementMetadata to StatementMetadata
  */
 export const mapIBKRStatementMetadata = (dto: IBKRStatementMetadata): StatementMetadata => {
   return {
@@ -154,16 +154,16 @@ export const mapIBKRStatementMetadata = (dto: IBKRStatementMetadata): StatementM
 };
 
 // ============================================================================
-// SEKCJA 2: MAPOWANIA Z OBLICZENIAMI PODATKOWYMI
+// SECTION 2: MAPPINGS WITH TAX CALCULATIONS
 // ============================================================================
-// Mapowania dla modeli, które wymagają obliczeń podatkowych i kursów wymiany
+// Mappings for models that require tax calculations and exchange rates
 
 /**
- * Mapuje IBKRTradeDto[] na Trade[] z kursami NBP i wartościami w PLN
+ * Maps IBKRTradeDto[] to Trade[] with NBP rates and PLN values
  *
- * @param trades - Surowe transakcje z CSV (IBKRTradeDto[])
- * @param exchangeRatesCache - Cache z kursami NBP (pobrany raz dla wszystkich danych)
- * @returns Trade[] z kursami wymiany i podsumowaniami podatkowymi
+ * @param trades - Raw trades from the CSV (IBKRTradeDto[])
+ * @param exchangeRatesCache - Cache of NBP rates (fetched once for all data)
+ * @returns Trade[] with exchange rates and tax summaries
  */
 export const mapIBKRTradesToTrades = (
   trades: IBKRTradeDto[],
@@ -171,30 +171,30 @@ export const mapIBKRTradesToTrades = (
 ): Trade[] => {
   if (trades.length === 0) return [];
 
-  // 1) Najpierw odfiltruj śmieci (brak daty)
+  // 1) First filter out junk (missing date)
   const validTrades = trades.filter(trade => {
     if (!trade.dateTime || trade.dateTime.trim() === '') {
-      console.warn(`⚠️  Pomijam transakcję z pustą datą: ${JSON.stringify(trade)}`);
+      console.warn(`⚠️  Skipping trade with an empty date: ${JSON.stringify(trade)}`);
       return false;
     }
     return true;
   });
 
-  // 2) POSORTUJ po dacie/czasie – to jest krytyczne dla FIFO
+  // 2) SORT by date/time - this is critical for FIFO
   const sortedTrades = [...validTrades].sort((a, b) => {
     const aTime = new Date(a.dateTime.replace(',', '')).getTime();
     const bTime = new Date(b.dateTime.replace(',', '')).getTime();
     return aTime - bTime;
   });
 
-  // 3) Utwórz nowy engine dla tego batcha transakcji
+  // 3) Create a new engine for this batch of trades
   const stockEngine = new TradeTaxEngine({ multiplier: 1 });
   const optionEngine = new TradeTaxEngine({ multiplier: 100 });
-  // NOTE: fxEngine nie jest używany - FOREX nie jest obecnie przetwarzany podatkowo.
-  // W przyszłości Trade będzie miał pole "isSpekulative" (lub podobne) do rozróżnienia
-  // wymiany waluty (nieopodatkowanej) od spekulacji na FOREX (opodatkowanej).
+  // NOTE: fxEngine is not used - FOREX is not currently processed for tax purposes.
+  // In the future Trade will have an "isSpekulative" field (or similar) to distinguish
+  // currency exchange (untaxed) from FOREX speculation (taxed).
 
-  // 4) Mapuj i licz podatek
+  // 4) Map and calculate tax
   const mappedTrades = sortedTrades.map(trade => {
     const category = IBKR_TRADE_CATEGORY_MAP[trade.assetCategory] || OperationCategoryEnum.UNKNOWN;
 
@@ -235,11 +235,11 @@ export const mapIBKRTradesToTrades = (
 };
 
 /**
- * Mapuje IBKRDividendDto[] na Dividend[] z kursami NBP i wartościami w PLN
+ * Maps IBKRDividendDto[] to Dividend[] with NBP rates and PLN values
  *
- * @param dividends - Surowe dywidendy z CSV (IBKRDividendDto[])
- * @param exchangeRatesCache - Cache z kursami NBP (pobrany raz dla wszystkich danych)
- * @returns Dividend[] z kursami wymiany i podsumowaniami podatkowymi
+ * @param dividends - Raw dividends from the CSV (IBKRDividendDto[])
+ * @param exchangeRatesCache - Cache of NBP rates (fetched once for all data)
+ * @returns Dividend[] with exchange rates and tax summaries
  */
 export const mapIBKRDividendsToDividends = (
   dividends: IBKRDividendDto[],
@@ -250,7 +250,7 @@ export const mapIBKRDividendsToDividends = (
   const mappedDividends = dividends
     .filter(dividend => {
       if (!dividend.date || dividend.date.trim() === '') {
-        console.warn(`⚠️  Pomijam dywidendę z pustą datą: ${JSON.stringify(dividend)}`);
+        console.warn(`⚠️  Skipping dividend with an empty date: ${JSON.stringify(dividend)}`);
         return false;
       }
       return true;
@@ -281,11 +281,11 @@ export const mapIBKRDividendsToDividends = (
 };
 
 /**
- * Mapuje IBKRInterestDto[] na Interest[] z kursami NBP i wartościami w PLN
+ * Maps IBKRInterestDto[] to Interest[] with NBP rates and PLN values
  *
- * @param interests - Surowe odsetki z CSV (IBKRInterestDto[])
- * @param exchangeRatesCache - Cache z kursami NBP (pobrany raz dla wszystkich danych)
- * @returns Interest[] z kursami wymiany i podsumowaniami podatkowymi
+ * @param interests - Raw interest from the CSV (IBKRInterestDto[])
+ * @param exchangeRatesCache - Cache of NBP rates (fetched once for all data)
+ * @returns Interest[] with exchange rates and tax summaries
  */
 export const mapIBKRInterestsToInterests = (
   interests: IBKRInterestDto[],
@@ -296,7 +296,7 @@ export const mapIBKRInterestsToInterests = (
   const mappedInterests = interests
     .filter(interest => {
       if (!interest.date || interest.date.trim() === '') {
-        console.warn(`⚠️  Pomijam odsetki z pustą datą: ${JSON.stringify(interest)}`);
+        console.warn(`⚠️  Skipping interest with an empty date: ${JSON.stringify(interest)}`);
         return false;
       }
       return true;
@@ -325,11 +325,11 @@ export const mapIBKRInterestsToInterests = (
 };
 
 /**
- * Mapuje IBKRBorrowDto[] na Borrow[] z kursami NBP i wartościami w PLN
+ * Maps IBKRBorrowDto[] to Borrow[] with NBP rates and PLN values
  *
- * @param borrows - Surowe opłaty za pożyczkę z CSV (IBKRBorrowDto[])
- * @param exchangeRatesCache - Cache z kursami NBP (pobrany raz dla wszystkich danych)
- * @returns Borrow[] z kursami wymiany i podsumowaniami podatkowymi
+ * @param borrows - Raw borrow fees from the CSV (IBKRBorrowDto[])
+ * @param exchangeRatesCache - Cache of NBP rates (fetched once for all data)
+ * @returns Borrow[] with exchange rates and tax summaries
  */
 export const mapIBKRBorrowsToBorrows = (
   borrows: IBKRBorrowDto[],
@@ -340,7 +340,7 @@ export const mapIBKRBorrowsToBorrows = (
   const mappedBorrows = borrows
     .filter(borrow => {
       if (!borrow.valueDate || borrow.valueDate.trim() === '') {
-        console.warn(`⚠️  Pomijam opłatę za pożyczkę z pustą datą: ${JSON.stringify(borrow)}`);
+        console.warn(`⚠️  Skipping borrow fee with an empty date: ${JSON.stringify(borrow)}`);
         return false;
       }
       return true;
@@ -374,11 +374,11 @@ export const mapIBKRBorrowsToBorrows = (
 };
 
 // ============================================================================
-// SEKCJA 3: FUNKCJE POMOCNICZE - OBLICZANIE PODSUMOWAŃ PODATKOWYCH
+// SECTION 3: HELPER FUNCTIONS - CALCULATING TAX SUMMARIES
 // ============================================================================
 
 /**
- * Oblicza przychód, koszt i dochód dla dywidendy (Pure Function)
+ * Calculates revenue, cost and income for a dividend (Pure Function)
  */
 const calculateDividendSummary = (
   dividend: IBKRDividendDto,
@@ -390,7 +390,7 @@ const calculateDividendSummary = (
 };
 
 /**
- * Oblicza przychód, koszt i dochód dla odsetek (Pure Function)
+ * Calculates revenue, cost and income for interest (Pure Function)
  */
 const calculateInterestSummary = (
   interest: IBKRInterestDto,
@@ -402,7 +402,7 @@ const calculateInterestSummary = (
 };
 
 /**
- * Oblicza przychód, koszt i dochód dla opłaty za pożyczkę (Pure Function)
+ * Calculates revenue, cost and income for a borrow fee (Pure Function)
  */
 const calculateBorrowSummary = (borrow: IBKRBorrowDto, nbpRate: undefined | number): TaxSummary => {
   if (!nbpRate) return EMPTY_SUMMARY;
@@ -411,25 +411,25 @@ const calculateBorrowSummary = (borrow: IBKRBorrowDto, nbpRate: undefined | numb
 };
 
 /**
- * Mapuje IBKROpenPositionDto[] na OpenPosition[] z kursami NBP
+ * Maps IBKROpenPositionDto[] to OpenPosition[] with NBP rates
  *
- * @param positions - Surowe pozycje z CSV (IBKROpenPositionDto[])
- * @param exchangeRatesCache - Cache z kursami NBP (pobrany raz dla wszystkich danych)
- * @param reportEndDate - Data końca okresu raportu (używana do pobrania kursu wymiany)
- * @returns OpenPosition[] z kursami wymiany
+ * @param positions - Raw positions from the CSV (IBKROpenPositionDto[])
+ * @param exchangeRatesCache - Cache of NBP rates (fetched once for all data)
+ * @param reportEndDate - Report period end date (YYYY-MM-DD), defaults to today
+ * @returns OpenPosition[] with exchange rates
  */
 export const mapIBKROpenPositionsToOpenPositions = (
   positions: IBKROpenPositionDto[],
-  exchangeRatesCache: ExchangeRatesCache
+  exchangeRatesCache: ExchangeRatesCache,
+  reportEndDate: string = new Date().toISOString().split('T')[0]
 ): OpenPosition[] => {
   if (positions.length === 0) return [];
 
-  // Użyj dzisiejszej daty minus 1 dzień
-  const today: string = new Date().toISOString().split('T')[0];
-  const previousDay: string = getPreviousDay(today);
+  // Rate from the day preceding the period end (default: today)
+  const previousDay: string = getPreviousDay(reportEndDate);
 
   return positions.map(position => {
-    // Mapuj kategorię z IBKR na OperationCategoryEnum
+    // Map the IBKR category to OperationCategoryEnum
     const category =
       IBKR_TRADE_CATEGORY_MAP[position.assetCategory] || OperationCategoryEnum.UNKNOWN;
 

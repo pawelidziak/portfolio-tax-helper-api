@@ -9,8 +9,8 @@ import { IBKRBorrowDto } from './ibkr-borrow.dto';
 import { IBKRTradeDto } from './ibkr-trade.dto';
 
 /**
- * Statement IBKR (surowe dane z CSV)
- * Zawiera wszystkie dane wyciągnięte z parsowania CSV bez wzbogacenia
+ * IBKR statement (raw CSV data)
+ * Contains all data extracted from CSV parsing, without enrichment
  */
 export interface IBKRStatement {
   deposits: IBKRDepositDto[];

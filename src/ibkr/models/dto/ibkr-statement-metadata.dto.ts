@@ -1,5 +1,5 @@
 /**
- * Metadane wyciągnięte z CSV IBKR
+ * Metadata extracted from the IBKR CSV
  */
 export interface IBKRStatementMetadata {
   minDate: string;

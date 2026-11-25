@@ -1,23 +1,23 @@
 /**
- * Model reprezentujący sekcję w pliku CSV IBKR
+ * Model representing a section in an IBKR CSV file
  */
 
 /**
- * Generyczna sekcja CSV
+ * Generic CSV section
  */
 export interface CsvSection {
-  /** Nazwa sekcji (np. "Trades", "Deposits & Withdrawals") */
+  /** Section name (e.g. "Trades", "Deposits & Withdrawals") */
   name: string;
 
-  /** Nagłówki kolumn */
+  /** Column headers */
   headers: string[];
 
-  /** Wiersze danych jako tablica wartości */
+  /** Data rows as an array of values */
   rows: string[][];
 }
 
 /**
- * Metadane sekcji - informacje o strukturze
+ * Section metadata - structure information
  */
 export interface CsvSectionMetadata {
   name: string;

@@ -3,45 +3,45 @@ import { TaxSummary } from './tax-summary.model';
 import { OperationCategoryEnum } from '../enums';
 
 /**
- * Opłata za pożyczkę akcji (model domenowy)
+ * Stock borrow fee (domain model)
  *
- * Abstrakcja niezależna od źródła danych (IBKR, inny broker, etc.)
- * Zawiera kurs wymiany i podsumowanie podatkowe dodane przez mapper.
+ * Abstraction independent of the data source (IBKR, another broker, etc.)
+ * Contains the exchange rate and tax summary added by the mapper.
  */
 export interface Borrow {
-  /** Kategoria operacji */
+  /** Operation category */
   category: OperationCategoryEnum;
 
-  /** Symbol instrumentu */
+  /** Instrument symbol */
   symbol: string;
 
-  /** Data wartości (Value Date) - Format: "YYYY-MM-DD" */
+  /** Value Date - Format: "YYYY-MM-DD" */
   valueDate: string;
 
-  /** Waluta opłaty */
+  /** Fee currency */
   currency: string;
 
-  /** Ilość pożyczonych akcji */
+  /** Quantity of borrowed shares */
   quantity: number;
 
-  /** Cena akcji */
+  /** Share price */
   price: number;
 
-  /** Wartość zabezpieczenia (collateral value) */
+  /** Collateral value */
   value: number;
 
-  /** Stawka opłaty w % rocznie */
+  /** Fee rate in % per year */
   feeRate: number;
 
-  /** Opłata za pożyczkę (zawsze ujemna) */
+  /** Borrow fee (always negative) */
   borrowFee: number;
 
-  /** Kod transakcji */
+  /** Transaction code */
   code: string;
 
-  /** Kurs wymiany (dodane przez mapper) */
+  /** Exchange rate (added by the mapper) */
   exchangeRate: ExchangeRate;
 
-  /** Podsumowanie podatkowe (dodane przez mapper) */
+  /** Tax summary (added by the mapper) */
   summary: TaxSummary;
 }

@@ -1,18 +1,18 @@
 /**
- * Parser dla sekcji Interest
+ * Parser for the Interest section
  *
- * Odpowiedzialność:
- * - Konwersja CsvSection na IBKRInterestDto[]
- * - Mapowanie kolumn
- * - Filtrowanie tylko Data (pomijamy Total z CSV)
+ * Responsibilities:
+ * - Converting CsvSection to IBKRInterestDto[]
+ * - Column mapping
+ * - Keeping only Data rows (skipping Total from the CSV)
  *
- * === OBSŁUGIWANE WPISY ===
- * - Credit Interest (odsetki od wolnej gotówki - IBKR płaci) - amount > 0
- * - Debit Interest (odsetki od marży/kredytu - IBKR pobiera) - amount < 0
+ * === SUPPORTED ENTRIES ===
+ * - Credit Interest (interest on free cash - IBKR pays) - amount > 0
+ * - Debit Interest (interest on margin/loan - IBKR charges) - amount < 0
  *
- * === UWAGA ===
- * "Borrow Fee" jest w osobnej sekcji "Borrow Fee Details" i wymaga osobnego parsera.
- * Borrow Fee powinien być traktowany jako koszt (ujemne odsetki).
+ * === NOTE ===
+ * "Borrow Fee" is in a separate "Borrow Fee Details" section and requires a separate parser.
+ * Borrow Fee should be treated as a cost (negative interest).
  */
 
 import { createDataMap, removeQuotes, parseNumber, getValue } from '@utils';
@@ -21,7 +21,7 @@ import { CsvSection } from '@shared/models';
 import { IBKRInterestDto } from '../../models/dto';
 
 /**
- * Nazwy kolumn w sekcji Interest pliku CSV IBKR
+ * Column names in the Interest section of the IBKR CSV file
  */
 enum CsvColumnNames {
   DESCRIPTION = 'Description',
@@ -31,7 +31,7 @@ enum CsvColumnNames {
 }
 
 /**
- * Parsuje sekcję Interest na IBKRInterestDto[]
+ * Parses the Interest section into IBKRInterestDto[]
  */
 export const parseInterestSection = (section: CsvSection): IBKRInterestDto[] => {
   const interests: IBKRInterestDto[] = [];
@@ -45,26 +45,26 @@ export const parseInterestSection = (section: CsvSection): IBKRInterestDto[] => 
 };
 
 /**
- * Parsuje pojedynczy wiersz na IBKRInterestDto
- * (pomijamy Total z CSV)
+ * Parses a single row into IBKRInterestDto
+ * (skipping Total from the CSV)
  */
 const parseInterestRow = (headers: string[], rowData: string[]): IBKRInterestDto | null => {
   const dataMap = createDataMap(headers, rowData);
 
-  // Sprawdź czy to nie Total - Total może mieć "Total" w kolumnie Currency lub pustą walutę
+  // Check that this is not Total - Total may have "Total" in the Currency column or an empty currency
   const currency = getValue(dataMap, CsvColumnNames.CURRENCY);
   const currencyTrimmed = currency ? currency.trim() : '';
   if (!currencyTrimmed || currencyTrimmed.toLowerCase() === 'total') {
-    return null; // Pomijamy wiersze Total
+    return null; // Skip Total rows
   }
 
   const amount = parseNumber(getValue(dataMap, CsvColumnNames.AMOUNT));
   if (amount === null || amount === undefined) return null;
 
-  // Walidacja daty - bez daty nie możemy znaleźć kursu NBP
+  // Date validation - without a date we cannot find the NBP rate
   const date = getValue(dataMap, CsvColumnNames.DATE);
   if (!date || date.trim() === '') {
-    return null; // Pomijamy wpisy bez daty
+    return null; // Skip entries without a date
   }
 
   return {

@@ -1,19 +1,19 @@
 import { CurrencyEnum } from '@shared/models';
 
 /**
- * DTO dla pojedynczej otwartej pozycji z CSV IBKR
+ * DTO for a single open position from the IBKR CSV
  */
 export interface IBKROpenPositionDto {
-  dataDiscriminator: string; // "Summary" dla pozycji, "Total" dla podsumowania
+  dataDiscriminator: string; // "Summary" for positions, "Total" for the totals row
   assetCategory: string; // "Stocks", "Equity and Index Options", etc.
   currency: CurrencyEnum;
   symbol: string;
-  quantity: number; // Może być ujemne dla short positions
-  mult: number; // Multiplier (np. 100 dla opcji)
-  costPrice: number; // Średnia cena zakupu
-  costBasis: number; // Całkowity koszt (quantity * costPrice * mult)
-  closePrice: number; // Aktualna cena zamknięcia
-  value: number; // Aktualna wartość pozycji (quantity * closePrice * mult)
-  unrealizedPL: number; // Niezrealizowany zysk/strata (value - costBasis)
-  code: string; // Kody transakcji
+  quantity: number; // Can be negative for short positions
+  mult: number; // Multiplier (e.g. 100 for options)
+  costPrice: number; // Average purchase price
+  costBasis: number; // Total cost (quantity * costPrice * mult)
+  closePrice: number; // Current closing price
+  value: number; // Current position value (quantity * closePrice * mult)
+  unrealizedPL: number; // Unrealized profit/loss (value - costBasis)
+  code: string; // Transaction codes
 }

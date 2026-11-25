@@ -1,17 +1,17 @@
 /**
- * Parser dla dywidend z sekcji Interest i Withholding Tax
+ * Parser for dividends from the Interest and Withholding Tax sections
  *
- * Odpowiedzialność:
- * - Łączenie danych z sekcji "Interest" (kwota brutto) i "Withholding Tax" (podatek)
- * - Konwersja na IBKRDividendDto[]
- * - Mapowanie kolumn
+ * Responsibilities:
+ * - Merging data from the "Interest" (gross amount) and "Withholding Tax" (tax) sections
+ * - Conversion to IBKRDividendDto[]
+ * - Column mapping
  *
- * === LOGIKA ===
- * Dywidendy w IBKR są w dwóch sekcjach:
- * 1. "Interest" - kwota brutto dywidendy (np. "Dividend on QQQ")
- * 2. "Withholding Tax" - podatek u źródła (np. "Withholding @ 15% on Dividend")
+ * === LOGIC ===
+ * Dividends in IBKR appear in two sections:
+ * 1. "Interest" - gross dividend amount (e.g. "Dividend on QQQ")
+ * 2. "Withholding Tax" - withholding tax (e.g. "Withholding @ 15% on Dividend")
  *
- * Musimy połączyć te dwa wpisy w jeden rekord dywidendy.
+ * We must merge these two entries into one dividend record.
  */
 
 import { createDataMap, removeQuotes, parseNumber, getValue } from '@utils';
@@ -20,7 +20,7 @@ import { CsvSection } from '@shared/models';
 import { IBKRDividendDto } from '../../models/dto';
 
 /**
- * Nazwy kolumn w sekcji Interest i Withholding Tax
+ * Column names in the Interest and Withholding Tax sections
  */
 enum CsvColumnNames {
   DESCRIPTION = 'Description',
@@ -31,34 +31,38 @@ enum CsvColumnNames {
 }
 
 /**
- * Parsuje sekcje Interest i Withholding Tax na IBKRDividendDto[]
+ * Parses the Dividends, Interest and Withholding Tax sections into IBKRDividendDto[]
  *
- * @param interestSection - Sekcja Interest z CSV
- * @param withholdingTaxSection - Sekcja Withholding Tax z CSV (opcjonalna)
- * @returns Tablica dywidend z połączonymi danymi
+ * @param dividendsSection - Dividends section from the CSV (standard IBKR format)
+ * @param interestSection - Interest section from the CSV (entries with "dividend" in the description)
+ * @param withholdingTaxSection - Withholding Tax section from the CSV (optional)
+ * @returns Array of dividends with merged data
  */
 export const parseDividendsSection = (
+  dividendsSection: CsvSection | undefined,
   interestSection: CsvSection | undefined,
   withholdingTaxSection: CsvSection | undefined
 ): IBKRDividendDto[] => {
   const dividends: IBKRDividendDto[] = [];
 
-  // Parsuj wpisy z Interest (kwota brutto)
-  const interestEntries = interestSection ? parseInterestEntries(interestSection) : [];
+  // Parse Interest entries (gross amount)
+  const interestEntries = [dividendsSection, interestSection].flatMap(section =>
+    section ? parseInterestEntries(section) : []
+  );
 
-  // Parsuj wpisy z Withholding Tax (podatek)
+  // Parse Withholding Tax entries (tax)
   const withholdingTaxEntries = withholdingTaxSection
     ? parseWithholdingTaxEntries(withholdingTaxSection)
     : [];
 
-  // Połącz wpisy w dywidendy
+  // Merge entries into dividends
   for (const interest of interestEntries) {
-    // Znajdź odpowiadający wpis z podatkiem (po dacie i symbolu)
+    // Find the matching tax entry (by date and symbol)
     const taxEntry = findMatchingTaxEntry(interest, withholdingTaxEntries);
 
-    const grossAmount = interest.amount; // zawsze dodatnia
-    const withholdingTaxAmount = taxEntry ? taxEntry.amount : 0; // zawsze ujemna lub 0
-    const netAmount = grossAmount + withholdingTaxAmount; // withholdingTaxAmount jest ujemne, więc to odejmowanie
+    const grossAmount = interest.amount; // always positive
+    const withholdingTaxAmount = taxEntry ? taxEntry.amount : 0; // always negative or 0
+    const netAmount = grossAmount + withholdingTaxAmount; // withholdingTaxAmount is negative, so this is a subtraction
 
     dividends.push({
       currency: interest.currency,
@@ -74,17 +78,17 @@ export const parseDividendsSection = (
 };
 
 /**
- * Wpis z sekcji Withholding Tax (podatek u źródła)
+ * Entry from the Withholding Tax section (withholding tax)
  */
 interface WithholdingTaxEntry {
   currency: string;
   date: string;
   symbol: string;
-  amount: number; // zawsze ujemna
+  amount: number; // always negative
 }
 
 /**
- * Wpis z sekcji Interest (kwota brutto dywidendy)
+ * Entry from the Interest section (gross dividend amount)
  */
 interface InterestEntry {
   currency: string;
@@ -94,7 +98,7 @@ interface InterestEntry {
 }
 
 /**
- * Parsuje wpisy z sekcji Interest (tylko dywidendy, nie odsetki)
+ * Parses entries from the Interest section (dividends only, not interest)
  */
 const parseInterestEntries = (section: CsvSection): InterestEntry[] => {
   const entries: InterestEntry[] = [];
@@ -108,35 +112,35 @@ const parseInterestEntries = (section: CsvSection): InterestEntry[] => {
 };
 
 /**
- * Parsuje pojedynczy wiersz z Interest (tylko dywidendy)
+ * Parses a single Interest row (dividends only)
  */
 const parseInterestRow = (headers: string[], rowData: string[]): InterestEntry | null => {
   const dataMap = createDataMap(headers, rowData);
 
-  // Sprawdź czy to nie Total - Total może mieć "Total" w kolumnie Currency lub pustą walutę
+  // Check that this is not Total - Total may have "Total" in the Currency column or an empty currency
   const currency = getValue(dataMap, CsvColumnNames.CURRENCY);
   const currencyTrimmed = currency ? currency.trim() : '';
   if (!currencyTrimmed || currencyTrimmed.toLowerCase() === 'total') {
-    return null; // Pomijamy wiersze Total
+    return null; // Skip Total rows
   }
 
   const description = removeQuotes(
     getValue(dataMap, CsvColumnNames.DESCRIPTION) || ''
   ).toLowerCase();
 
-  // Tylko wpisy z "dividend" w opisie (pomijamy "credit interest", "debit interest")
+  // Only entries with "dividend" in the description (skip "credit interest", "debit interest")
   if (!description.includes('dividend')) return null;
 
   const amount = parseNumber(getValue(dataMap, CsvColumnNames.AMOUNT));
   if (amount === null || amount === undefined || amount <= 0) return null;
 
-  // Wyciągnij symbol z opisu (np. "Dividend on QQQ" -> "QQQ")
+  // Extract the symbol from the description (e.g. "Dividend on QQQ" -> "QQQ")
   const symbol = extractSymbolFromDescription(description);
 
-  // Walidacja daty - bez daty nie możemy znaleźć kursu NBP
+  // Date validation - without a date we cannot find the NBP rate
   const date = getValue(dataMap, CsvColumnNames.DATE);
   if (!date || date.trim() === '') {
-    return null; // Pomijamy wpisy bez daty
+    return null; // Skip entries without a date
   }
 
   return {
@@ -148,7 +152,7 @@ const parseInterestRow = (headers: string[], rowData: string[]): InterestEntry |
 };
 
 /**
- * Parsuje wpisy z sekcji Withholding Tax (tylko dywidendy)
+ * Parses entries from the Withholding Tax section (dividends only)
  */
 const parseWithholdingTaxEntries = (section: CsvSection): WithholdingTaxEntry[] => {
   const entries: WithholdingTaxEntry[] = [];
@@ -162,7 +166,7 @@ const parseWithholdingTaxEntries = (section: CsvSection): WithholdingTaxEntry[] 
 };
 
 /**
- * Parsuje pojedynczy wiersz z Withholding Tax (tylko dywidendy)
+ * Parses a single Withholding Tax row (dividends only)
  */
 const parseWithholdingTaxRow = (
   headers: string[],
@@ -170,49 +174,51 @@ const parseWithholdingTaxRow = (
 ): WithholdingTaxEntry | null => {
   const dataMap = createDataMap(headers, rowData);
 
-  // Sprawdź czy to nie Total - Total może mieć "Total" w kolumnie Currency lub pustą walutę
+  // Check that this is not Total - Total may have "Total" in the Currency column or an empty currency
   const currency = getValue(dataMap, CsvColumnNames.CURRENCY);
   const currencyTrimmed = currency ? currency.trim() : '';
   if (!currencyTrimmed || currencyTrimmed.toLowerCase() === 'total') {
-    return null; // Pomijamy wiersze Total
+    return null; // Skip Total rows
   }
 
   const description = removeQuotes(
     getValue(dataMap, CsvColumnNames.DESCRIPTION) || ''
   ).toLowerCase();
 
-  // Tylko wpisy z "dividend" w opisie (pomijamy "credit interest")
+  // Only entries with "dividend" in the description (skip "credit interest")
   if (!description.includes('dividend')) return null;
 
   const amount = parseNumber(getValue(dataMap, CsvColumnNames.AMOUNT));
-  if (amount === null || amount === undefined || amount >= 0) return null; // podatek jest zawsze ujemny
+  if (amount === null || amount === undefined || amount >= 0) return null; // tax is always negative
 
-  // Wyciągnij symbol z opisu (np. "Withholding @ 15% on Dividend QQQ" -> "QQQ")
+  // Extract the symbol from the description (e.g. "Withholding @ 15% on Dividend QQQ" -> "QQQ")
   const symbol = extractSymbolFromDescription(description);
 
-  // Walidacja daty - bez daty nie możemy znaleźć kursu NBP
+  // Date validation - without a date we cannot find the NBP rate
   const date = getValue(dataMap, CsvColumnNames.DATE);
   if (!date || date.trim() === '') {
-    return null; // Pomijamy wpisy bez daty
+    return null; // Skip entries without a date
   }
 
   return {
     currency: removeQuotes(currencyTrimmed),
     date: date.trim(),
     symbol,
-    amount, // zawsze ujemna
+    amount, // always negative
   };
 };
 
 /**
- * Wyciąga symbol z opisu dywidendy
- * Przykłady:
+ * Extracts the symbol from the dividend description
+ * Examples:
+ * - "KO(US1912161007) Cash Dividend USD 0.51 per Share" -> "KO"
  * - "Dividend on QQQ" -> "QQQ"
  * - "Withholding @ 15% on Dividend QQQ" -> "QQQ"
  */
 const extractSymbolFromDescription = (description: string): string => {
-  // Szukaj wzorców typu "on QQQ", "Dividend QQQ", etc.
+  // Look for patterns like "KO(US1912161007) Cash Dividend ...", "on QQQ", "Dividend QQQ", etc.
   const patterns = [
+    /^([a-z0-9.]+)\(/i, // "KO(US1912161007) Cash Dividend USD 0.51 per Share"
     /on\s+([A-Z]+)/i, // "on QQQ"
     /dividend\s+([A-Z]+)/i, // "Dividend QQQ"
     /@\s+\d+%\s+on\s+dividend\s+([A-Z]+)/i, // "Withholding @ 15% on Dividend QQQ"
@@ -225,12 +231,12 @@ const extractSymbolFromDescription = (description: string): string => {
     }
   }
 
-  // Jeśli nie znaleziono, zwróć pusty string
+  // If nothing was found, return an empty string
   return '';
 };
 
 /**
- * Znajduje odpowiadający wpis z podatkiem dla dywidendy
+ * Finds the matching tax entry for a dividend
  */
 const findMatchingTaxEntry = (
   interest: InterestEntry,

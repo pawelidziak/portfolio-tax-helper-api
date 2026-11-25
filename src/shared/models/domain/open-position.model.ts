@@ -2,54 +2,54 @@ import { ExchangeRate } from './exchange-rate.model';
 import { OperationCategoryEnum } from '../enums';
 
 /**
- * Otwarta pozycja w portfelu (model domenowy)
+ * Open portfolio position (domain model)
  *
- * Reprezentuje aktualną pozycję w portfelu (nie transakcję).
- * Abstrakcja niezależna od źródła danych (IBKR, inny broker, etc.)
- * Zawiera kurs wymiany dodany przez mapper.
+ * Represents the current portfolio position (not a transaction).
+ * Abstraction independent of the data source (IBKR, another broker, etc.)
+ * Contains the exchange rate added by the mapper.
  */
 export interface OpenPosition {
-  /** Symbol instrumentu */
+  /** Instrument symbol */
   symbol: string;
 
   /**
-   * Kategoria aktywów
+   * Asset category
    *
-   * Używana do identyfikacji typu pozycji.
-   * Każdy broker mapuje swoje kategorie na OperationCategoryEnum w swoim mapperze.
+   * Used to identify the position type.
+   * Each broker maps its categories to OperationCategoryEnum in its own mapper.
    */
   category: OperationCategoryEnum;
 
-  /** Waluta pozycji */
+  /** Position currency */
   currency: string;
 
   /**
-   * Liczba jednostek w pozycji.
-   * Wartości ujemne oznaczają pozycje short, dodatnie - long.
+   * Number of units in the position.
+   * Negative values are short positions, positive values are long.
    */
   quantity: number;
 
-  /** Multiplier (np. 100 dla opcji) */
+  /** Multiplier (e.g. 100 for options) */
   mult: number;
 
-  /** Średnia cena zakupu */
+  /** Average purchase price */
   costPrice: number;
 
-  /** Całkowity koszt pozycji (quantity * costPrice * mult) */
+  /** Total position cost (quantity * costPrice * mult) */
   costBasis: number;
 
-  /** Aktualna cena zamknięcia */
+  /** Current close price */
   closePrice: number;
 
-  /** Aktualna wartość pozycji (quantity * closePrice * mult) */
+  /** Current position value (quantity * closePrice * mult) */
   value: number;
 
-  /** Niezrealizowany zysk/strata (value - costBasis) */
+  /** Unrealized profit/loss (value - costBasis) */
   unrealizedPL: number;
 
-  /** Kod pozycji (opcjonalny) */
+  /** Position code (optional) */
   code?: string;
 
-  /** Kurs wymiany (dodane przez mapper) */
+  /** Exchange rate (added by the mapper) */
   exchangeRate: ExchangeRate;
 }

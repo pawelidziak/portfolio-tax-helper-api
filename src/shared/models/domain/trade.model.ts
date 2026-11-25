@@ -4,98 +4,98 @@ import { TaxSummary } from './tax-summary.model';
 import { OperationCategoryEnum } from '../enums';
 
 /**
- * Transakcja (model domenowy)
+ * Trade (domain model)
  *
- * Abstrakcja niezależna od źródła danych (IBKR, inny broker, etc.)
- * Zawiera kurs wymiany i podsumowanie podatkowe dodane przez mapper.
+ * Abstraction independent of the data source (IBKR, another broker, etc.)
+ * Contains the exchange rate and tax summary added by the mapper.
  *
- * ⚠️ PRZYGOTOWANIE NA PRZYSZŁOŚĆ:
- * - Model jest wspólny dla wszystkich brokerów, ale każdy broker może mieć
- *   swoje specyficzne pola w źródle danych (DTO)
- * - Jeśli w przyszłości będziesz potrzebować pól specyficznych dla kategorii
- *   (np. strike, expiry dla opcji), rozważ:
- *   1. Dodanie opcjonalnych pól tutaj (np. strike?: number)
- *   2. Lub użycie pola metadata dla danych specyficznych dla brokera/kategorii
- * - Kategoria jest używana do wyboru odpowiedniej logiki obliczeniowej
- *   w calculateTradeSummary() - każdy broker ma swój mapper z własnym mapowaniem
+ * ⚠️ FUTURE-PROOFING:
+ * - The model is shared by all brokers, but each broker may have
+ *   its own specific fields in the data source (DTO)
+ * - If you later need category-specific fields
+ *   (e.g. strike, expiry for options), consider:
+ *   1. Adding optional fields here (e.g. strike?: number)
+ *   2. Or using the metadata field for broker/category-specific data
+ * - The category is used to select the appropriate calculation logic
+ *   in calculateTradeSummary() - each broker has its own mapper with its own mapping
  */
 export interface Trade {
-  /** Symbol instrumentu */
+  /** Instrument symbol */
   symbol: string;
 
-  /** Data i czas wykonania transakcji (Format: "YYYY-MM-DD, HH:MM:SS") */
+  /** Trade execution date and time (Format: "YYYY-MM-DD, HH:MM:SS") */
   dateTime: string;
 
   /**
-   * Kategoria transakcji
+   * Trade category
    *
-   * Używana do wyboru odpowiedniej logiki obliczeniowej podatkowej.
-   * Każdy broker mapuje swoje kategorie na OperationCategoryEnum w swoim mapperze.
+   * Used to select the appropriate tax calculation logic.
+   * Each broker maps its categories to OperationCategoryEnum in its own mapper.
    */
   category: OperationCategoryEnum;
 
-  /** Waluta transakcji */
+  /** Trade currency */
   currency: string;
 
   /**
-   * Liczba jednostek w transakcji.
-   * Wartości ujemne oznaczają sprzedaż, dodatnie - zakup.
+   * Number of units in the trade.
+   * Negative values are sales, positive values are purchases.
    */
   quantity: number;
 
   /**
-   * Pozycja netto (signed) po wykonaniu tej transakcji dla danego symbolu.
-   * Dodatnia wartość = long, ujemna = short, zero = brak pozycji, undefined = nieprawidłowa transakcja lub pomijamy obliczenia.
+   * Net position (signed) after this trade executes for the given symbol.
+   * Positive value = long, negative = short, zero = no position, undefined = invalid trade or calculations are skipped.
    */
   quantityAfter?: number;
 
-  /** Cena transakcji */
+  /** Trade price */
   tradePrice: number;
 
-  /** Cena zamknięcia instrumentu */
+  /** Instrument close price */
   closingPrice: number;
 
-  /** Przychód z transakcji (ujemny dla zakupów, dodatni dla sprzedaży) */
+  /** Trade proceeds (negative for purchases, positive for sales) */
   proceeds: number;
 
-  /** Prowizja i opłaty */
+  /** Commission and fees */
   commissionFee: number;
 
-  /** Podstawa kosztowa */
+  /** Cost basis */
   basis: number;
 
-  /** Zrealizowany zysk/strata */
+  /** Realized profit/loss */
   realizedPL: number;
 
-  /** Mark-to-Market zysk/strata */
+  /** Mark-to-Market profit/loss */
   mtmPL: number;
 
   /**
-   * Kod transakcji (np. "O", "C", "A;O")
+   * Transaction code (e.g. "O", "C", "A;O")
    *
-   * Format i znaczenie kodów może różnić się między brokerami.
-   * Każdy broker ma swój parser, który interpretuje te kody.
+   * The format and meaning of the codes may differ between brokers.
+   * Each broker has its own parser that interprets these codes.
    */
   code?: string;
 
   /**
-   * Dodatkowe metadane specyficzne dla brokera/kategorii
+   * Additional metadata specific to the broker/category
    *
-   * Używane do przechowywania danych, które nie pasują do standardowych pól,
-   * ale mogą być potrzebne w przyszłości (np. strike, expiry dla opcji).
+   * Used to store data that does not fit the standard fields,
+   * but may be needed in the future (e.g. strike, expiry for options).
    *
-   * Przykład użycia:
-   * - Dla opcji: { strike: 615, expiry: "2025-11-04", optionType: "PUT" }
-   * - Dla innych brokerów: { brokerSpecificField: "value" }
+   * Usage example:
+   * - For options: { strike: 615, expiry: "2025-11-04", optionType: "PUT" }
+   * - For other brokers: { brokerSpecificField: "value" }
    */
   metadata?: Record<string, unknown>;
 
-  /** Kurs wymiany (dodane przez mapper) */
+  /** Exchange rate (added by the mapper) */
   exchangeRate: ExchangeRate;
 
-  /** Podsumowanie podatkowe (dodane przez mapper) */
+  /** Tax summary (added by the mapper) */
   summary: TaxSummary;
 
-  /** Akcje na pozycjach (dodane przez mapper) */
+  /** Position actions (added by the mapper) */
   actions: TradeAction[];
 }

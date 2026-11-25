@@ -1,26 +1,26 @@
 /**
- * Model reprezentujący depozyt/wypłatę z sekcji Deposits & Withdrawals w raporcie IBKR
+ * Model representing a deposit/withdrawal from the Deposits & Withdrawals section of the IBKR report
  *
- * To są CZYSTE dane z CSV, bez żadnego wzbogacenia.
+ * This is PURE data from the CSV, with no enrichment.
  */
 
 /**
- * Pojedynczy depozyt/wypłata z raportu IBKR (surowe dane z CSV)
- * DTO = Data Transfer Object - dane bezpośrednio z parsowania CSV
+ * A single deposit/withdrawal from the IBKR report (raw CSV data)
+ * DTO = Data Transfer Object - data straight from CSV parsing
  */
 export interface IBKRDepositDto {
-  /** Waluta depozytu/wypłaty: USD, PLN, etc. */
+  /** Deposit/withdrawal currency: USD, PLN, etc. */
   currency: string;
 
-  /** Data rozliczenia (Settle Date) w formacie YYYY-MM-DD */
+  /** Settle Date in YYYY-MM-DD format */
   settleDate: string;
 
-  /** Opis transakcji (np. "Electronic Fund Transfer") */
+  /** Transaction description (e.g. "Electronic Fund Transfer") */
   description: string;
 
   /**
-   * Kwota depozytu/wypłaty
-   * Wartości dodatnie oznaczają depozyty, ujemne - wypłaty.
+   * Deposit/withdrawal amount
+   * Positive values are deposits, negative ones are withdrawals.
    */
   amount: number;
 }

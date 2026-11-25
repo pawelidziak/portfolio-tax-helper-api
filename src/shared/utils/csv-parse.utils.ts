@@ -1,9 +1,9 @@
 /**
- * Pomocnicze funkcje do pracy z CSV
+ * Helper functions for working with CSV
  */
 
 /**
- * Parsuje linię CSV, obsługując wartości w cudzysłowach
+ * Parses a CSV line, handling quoted values
  */
 export const parseCsvLine = (line: string): string[] => {
   const result: string[] = [];
@@ -34,7 +34,7 @@ export const parseCsvLine = (line: string): string[] => {
 };
 
 /**
- * Parsuje wartość liczbową z CSV, obsługując formaty z przecinkami i pustymi wartościami
+ * Parses a numeric value from CSV, handling comma-formatted and empty values
  */
 export const parseNumber = (value: string): undefined | number => {
   if (!value || value.trim() === '' || value === '--') {
@@ -46,15 +46,15 @@ export const parseNumber = (value: string): undefined | number => {
 };
 
 /**
- * Usuwa cudzysłowy z początku i końca tekstu
+ * Removes quotes from the start and end of the text
  */
 export const removeQuotes = (value: string): string => {
   return value.replace(/^"|"$/g, '');
 };
 
 /**
- * Parsuje datę i czas z formatu "YYYY-MM-DD, HH:MM:SS"
- * (usuwa tylko cudzysłowy, zwraca cały string)
+ * Parses a date and time from the "YYYY-MM-DD, HH:MM:SS" format
+ * (removes quotes only, returns the whole string)
  */
 export const parseDateTime = (dateTimeStr: string): undefined | string => {
   if (!dateTimeStr || dateTimeStr.trim() === '') {
@@ -64,7 +64,7 @@ export const parseDateTime = (dateTimeStr: string): undefined | string => {
 };
 
 /**
- * Tworzy mapę kolumna -> wartość
+ * Creates a column -> value map
  */
 export const createDataMap = (headers: string[], rowData: string[]): Map<string, string> => {
   const map = new Map<string, string>();
@@ -75,7 +75,7 @@ export const createDataMap = (headers: string[], rowData: string[]): Map<string,
 };
 
 /**
- * Pobiera wartość z mapy (obsługuje alternatywne nazwy kolumn)
+ * Gets a value from the map (supports alternative column names)
  */
 export const getValue = (
   map: Map<string, string>,

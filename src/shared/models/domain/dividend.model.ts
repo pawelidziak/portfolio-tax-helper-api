@@ -3,36 +3,36 @@ import { TaxSummary } from './tax-summary.model';
 import { OperationCategoryEnum } from '../enums';
 
 /**
- * Dywidenda (model domenowy)
+ * Dividend (domain model)
  *
- * Abstrakcja niezależna od źródła danych (IBKR, inny broker, etc.)
- * Zawiera kurs wymiany i podsumowanie podatkowe dodane przez mapper.
+ * Abstraction independent of the data source (IBKR, another broker, etc.)
+ * Contains the exchange rate and tax summary added by the mapper.
  */
 export interface Dividend {
-  /** Kategoria operacji */
+  /** Operation category */
   category: OperationCategoryEnum;
 
-  /** Symbol instrumentu (ticker) */
+  /** Instrument symbol (ticker) */
   symbol: string;
 
-  /** Data dywidendy (Format: "YYYY-MM-DD") */
+  /** Dividend date (Format: "YYYY-MM-DD") */
   date: string;
 
-  /** Waluta dywidendy */
+  /** Dividend currency */
   currency: string;
 
-  /** Kwota brutto dywidendy (przed podatkiem u źródła) */
+  /** Gross dividend amount (before withholding tax) */
   grossAmount: number;
 
-  /** Podatek u źródła (zawsze ujemny lub 0) */
+  /** Withholding tax (always negative or 0) */
   withholdingTaxAmount: number;
 
-  /** Kwota netto dywidendy (po podatku u źródła) */
+  /** Net dividend amount (after withholding tax) */
   netAmount: number;
 
-  /** Kurs wymiany (dodane przez mapper) */
+  /** Exchange rate (added by the mapper) */
   exchangeRate: ExchangeRate;
 
-  /** Podsumowanie podatkowe (dodane przez mapper) */
+  /** Tax summary (added by the mapper) */
   summary: TaxSummary;
 }

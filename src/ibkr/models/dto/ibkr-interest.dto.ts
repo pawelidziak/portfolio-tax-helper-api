@@ -1,27 +1,27 @@
 /**
- * Model reprezentujący odsetki z sekcji Interest w raporcie IBKR
+ * Model representing interest from the Interest section of the IBKR report
  *
- * To są CZYSTE dane z CSV, bez żadnego wzbogacenia.
+ * This is PURE data from the CSV, with no enrichment.
  */
 
 /**
- * Pojedynczy wpis odsetek z raportu IBKR
- * DTO = Data Transfer Object - dane bezpośrednio z parsowania CSV
+ * A single interest entry from the IBKR report
+ * DTO = Data Transfer Object - data straight from CSV parsing
  */
 export interface IBKRInterestDto {
-  /** Waluta odsetek: USD, PLN, etc. */
+  /** Interest currency: USD, PLN, etc. */
   currency: string;
 
-  /** Data odsetek (Format: "YYYY-MM-DD") */
+  /** Interest date (Format: "YYYY-MM-DD") */
   date: string;
 
-  /** Opis odsetek (np. "USD Credit Interest for Oct-2025", "USD Debit Interest") */
+  /** Interest description (e.g. "USD Credit Interest for Oct-2025", "USD Debit Interest") */
   description: string;
 
   /**
-   * Kwota odsetek
-   * Dodatnia dla credit interest (IBKR płaci)
-   * Ujemna dla debit interest (IBKR pobiera - margin interest)
+   * Interest amount
+   * Positive for credit interest (IBKR pays)
+   * Negative for debit interest (IBKR charges - margin interest)
    */
   amount: number;
 }

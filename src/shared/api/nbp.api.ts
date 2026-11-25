@@ -1,9 +1,9 @@
 /**
- * Serwis do pobierania kursów walut z API NBP
+ * Service for fetching currency exchange rates from the NBP API
  *
- * Dokumentacja API: https://api.nbp.pl/
+ * API documentation: https://api.nbp.pl/
  *
- * Single Responsibility: Komunikacja z API NBP i zarządzanie kursami walut
+ * Single Responsibility: Communication with the NBP API and exchange rate management
  */
 
 import { getPreviousDay } from '@utils';
@@ -13,31 +13,34 @@ import { CurrencyEnum } from '../models';
 
 const NBP_API = {
   BASE_URL: process.env.NBP_API_BASE_URL || 'https://api.nbp.pl/api',
-  TABLE_TYPE: process.env.NBP_API_TABLE_TYPE || 'a', // Tabela A - średnie kursy walut
+  TABLE_TYPE: process.env.NBP_API_TABLE_TYPE || 'a', // Table A - average exchange rates
   FORMAT: process.env.NBP_API_FORMAT || 'json',
-  PLN_RATE: Number(process.env.NBP_API_PLN_RATE) || 1.0, // PLN jako waluta bazowa
+  PLN_RATE: Number(process.env.NBP_API_PLN_RATE) || 1.0, // PLN as the base currency
 };
 
+/** NBP rejects ranges over 367 days with HTTP 400, so longer ranges are fetched in chunks. */
+const NBP_MAX_RANGE_DAYS = 360;
+
 /**
- * Cache kursów walut NBP
- * Struktura: waluta -> data -> kurs
+ * NBP exchange rate cache
+ * Structure: currency -> date -> rate
  */
 export type ExchangeRatesCache = Map<string, Map<string, number>>;
 
 /**
- * Pobiera kursy wymiany z API NBP dla danej waluty i zakresu dat
+ * Fetches exchange rates from the NBP API for a given currency and date range
  *
- * API NBP zwraca TYLKO dni robocze (pon-pt).
- * findNBPRate() rekurencyjnie szuka dostępnego kursu, cofając się po 1 dniu.
+ * The NBP API returns ONLY business days (Mon-Fri).
+ * findNBPRate() recursively looks for an available rate, stepping back 1 day at a time.
  */
-const fetchExchangeRates = async (
+const fetchExchangeRatesChunk = async (
   currency: string,
   startDate: string,
   endDate: string
 ): Promise<Map<string, number>> => {
   const ratesMap = new Map<string, number>();
 
-  // PLN = 1.0 (waluta bazowa) - findNBPRate() zwróci 1.0 automatycznie
+  // PLN = 1.0 (base currency) - findNBPRate() returns 1.0 automatically
   if (isPLN(currency)) return ratesMap;
 
   const currencyCode = currency.toLowerCase();
@@ -47,31 +50,67 @@ const fetchExchangeRates = async (
     const response = await fetch(url);
 
     if (!response.ok) {
-      console.warn(`⚠️  Nie udało się pobrać kursów NBP dla ${currency}`);
+      console.warn(`⚠️  Failed to fetch NBP rates for ${currency}`);
       return ratesMap;
     }
 
     const data = (await response.json()) as NBPRateResponseDto;
 
-    // Mapuj effectiveDate -> mid (tylko dni robocze z API)
+    // Map effectiveDate -> mid (business days only, from the API)
     for (const rate of data.rates) {
       ratesMap.set(rate.effectiveDate, rate.mid);
     }
 
     return ratesMap;
   } catch (error) {
-    console.warn(`❌ Błąd pobierania kursów NBP dla ${currency}:`, error);
+    console.warn(`❌ Error fetching NBP rates for ${currency}:`, error);
     return ratesMap;
   }
 };
 
 /**
- * Pobiera kursy walut dla podanych walut i zakresu dat
+ * Splits an inclusive date range into consecutive chunks of at most `maxDays` days (Pure Function)
+ */
+export const splitDateRange = (
+  startDate: string,
+  endDate: string,
+  maxDays: number = NBP_MAX_RANGE_DAYS
+): { startDate: string; endDate: string }[] => {
+  const chunks: { startDate: string; endDate: string }[] = [];
+  let chunkStart = startDate;
+
+  while (chunkStart <= endDate) {
+    const chunkEnd = getPreviousDay(chunkStart, -(maxDays - 1));
+    const boundedEnd = chunkEnd < endDate ? chunkEnd : endDate;
+    chunks.push({ startDate: chunkStart, endDate: boundedEnd });
+    chunkStart = getPreviousDay(boundedEnd, -1);
+  }
+
+  return chunks;
+};
+
+const fetchExchangeRates = async (
+  currency: string,
+  startDate: string,
+  endDate: string
+): Promise<Map<string, number>> => {
+  const ratesMap = new Map<string, number>();
+
+  for (const chunk of splitDateRange(startDate, endDate)) {
+    const chunkRates = await fetchExchangeRatesChunk(currency, chunk.startDate, chunk.endDate);
+    chunkRates.forEach((rate, date) => ratesMap.set(date, rate));
+  }
+
+  return ratesMap;
+};
+
+/**
+ * Fetches exchange rates for the given currencies and date range
  *
- * @param currencies - Lista walut do pobrania
- * @param startDate - Data początkowa (YYYY-MM-DD)
- * @param endDate - Data końcowa (YYYY-MM-DD)
- * @returns Cache z kursami: waluta -> data -> kurs (TYLKO dni robocze)
+ * @param currencies - List of currencies to fetch
+ * @param startDate - Start date (YYYY-MM-DD)
+ * @param endDate - End date (YYYY-MM-DD)
+ * @returns Rate cache: currency -> date -> rate (business days ONLY)
  */
 export const getExchangeRates = async (
   currencies: Set<string>,
@@ -91,15 +130,15 @@ export const getExchangeRates = async (
 };
 
 /**
- * Rekurencyjnie szuka pierwszego dostępnego kursu NBP (Pure Function)
+ * Recursively looks for the first available NBP rate (Pure Function)
  *
- * Cofa się o 1 dzień wstecz do znalezienia kursu lub osiągnięcia max prób.
+ * Steps back 1 day at a time until a rate is found or the max attempts are reached.
  *
- * @param ratesCache - Cache z kursami NBP
- * @param currency - Waluta
- * @param date - Data początkowa (YYYY-MM-DD)
- * @param attempt - Licznik prób (max 10)
- * @returns Obiekt { date, rate } lub undefined
+ * @param ratesCache - NBP rate cache
+ * @param currency - Currency
+ * @param date - Start date (YYYY-MM-DD)
+ * @param attempt - Attempt counter (max 10)
+ * @returns Object { date, rate } or undefined
  */
 export const findNBPRate = (
   ratesCache: ExchangeRatesCache,
@@ -107,22 +146,22 @@ export const findNBPRate = (
   date: string,
   attempt: number = 0
 ): { date: string; rate: number } | undefined => {
-  // PLN zawsze = 1.0
+  // PLN is always = 1.0
   if (isPLN(currency)) return { date, rate: NBP_API.PLN_RATE };
 
-  // Max 10 prób
+  // Max 10 attempts
   if (attempt >= 10) return undefined;
 
-  // Sprawdź czy jest kurs dla tej daty
+  // Check whether a rate exists for this date
   const rate = ratesCache.get(currency)?.get(date);
   if (rate) return { date, rate };
 
-  // Cofnij się o 1 dzień i szukaj ponownie (rekurencja)
+  // Step back 1 day and search again (recursion)
   const previousDate = getPreviousDay(date);
   return findNBPRate(ratesCache, currency, previousDate, attempt + 1);
 };
 
 /**
- * Sprawdza czy waluta to PLN (Pure Function)
+ * Checks whether the currency is PLN (Pure Function)
  */
 const isPLN = (currency: string): boolean => currency.toUpperCase() === CurrencyEnum.PLN;

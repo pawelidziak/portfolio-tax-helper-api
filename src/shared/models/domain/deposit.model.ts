@@ -1,26 +1,26 @@
 import { OperationCategoryEnum } from '../enums';
 
 /**
- * Depozyt/wypłata (model domenowy)
+ * Deposit/withdrawal (domain model)
  *
- * Abstrakcja niezależna od źródła danych
+ * Abstraction independent of the data source
  */
 export interface Deposit {
-  /** Kategoria operacji */
+  /** Operation category */
   category: OperationCategoryEnum;
 
-  /** Waluta depozytu/wypłaty */
+  /** Deposit/withdrawal currency */
   currency: string;
 
-  /** Data rozliczenia w formacie YYYY-MM-DD */
+  /** Settlement date in YYYY-MM-DD format */
   settleDate: string;
 
-  /** Opis transakcji */
+  /** Transaction description */
   description: string;
 
   /**
-   * Kwota depozytu/wypłaty
-   * Wartości dodatnie oznaczają depozyty, ujemne - wypłaty.
+   * Deposit/withdrawal amount
+   * Positive values are deposits, negative values are withdrawals.
    */
   amount: number;
 }

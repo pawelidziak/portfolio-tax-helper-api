@@ -1,15 +1,15 @@
 /**
- * Kategorie transakcji (model domenowy)
+ * Trade categories (domain model)
  *
- * Używane do określenia typu operacji niezależnie od brokera.
- * Każdy broker może mieć swoje własne nazwy kategorii w źródle danych,
- * ale mapujemy je na ten wspólny enum.
+ * Used to determine the operation type regardless of the broker.
+ * Each broker may have its own category names in the data source,
+ * but we map them to this shared enum.
  *
- * ⚠️ ROZSZERZANIE:
- * - Gdy dodajesz nowego brokera z nowymi kategoriami, rozważ dodanie ich tutaj
- * - Jeśli kategoria jest specyficzna tylko dla jednego brokera, użyj UNKNOWN
- *   i obsłuż ją w logice specyficznej dla tego brokera
- * - Przykłady przyszłych kategorii: FUTURES, BONDS, CRYPTO, etc.
+ * ⚠️ EXTENDING:
+ * - When adding a new broker with new categories, consider adding them here
+ * - If a category is specific to a single broker, use UNKNOWN
+ *   and handle it in logic specific to that broker
+ * - Examples of future categories: FUTURES, BONDS, CRYPTO, etc.
  */
 export enum OperationCategoryEnum {
   DIVIDEND = 'DIVIDEND',

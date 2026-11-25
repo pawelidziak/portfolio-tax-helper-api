@@ -1,9 +1,9 @@
 /**
- * Parser dla sekcji Account Information
+ * Parser for the Account Information section
  *
- * Odpowiedzialność:
- * - Konwersja CsvSection na IBKRAccountInformationDto
- * - Mapowanie pól Field Name -> Field Value
+ * Responsibilities:
+ * - Converting CsvSection to IBKRAccountInformationDto
+ * - Mapping Field Name -> Field Value fields
  */
 
 import { createDataMap, removeQuotes, getValue } from '@utils';
@@ -12,7 +12,7 @@ import { CsvSection } from '@shared/models';
 import { IBKRAccountInformationDto } from '../../models/dto';
 
 /**
- * Nazwy kolumn w sekcji Account Information
+ * Column names in the Account Information section
  */
 enum CsvColumnNames {
   FIELD_VALUE = 'Field Value',
@@ -20,7 +20,7 @@ enum CsvColumnNames {
 }
 
 /**
- * Mapowanie nazw pól CSV na właściwości DTO
+ * Mapping of CSV field names to DTO properties
  */
 const fieldNameToProperty: Record<string, keyof IBKRAccountInformationDto> = {
   Name: 'name',
@@ -32,7 +32,7 @@ const fieldNameToProperty: Record<string, keyof IBKRAccountInformationDto> = {
 };
 
 /**
- * Parsuje sekcję Account Information na IBKRAccountInformationDto
+ * Parses the Account Information section into IBKRAccountInformationDto
  */
 export const parseAccountInformationSection = (
   section: CsvSection | undefined
@@ -64,7 +64,7 @@ export const parseAccountInformationSection = (
 };
 
 /**
- * Parsuje pojedynczy wiersz Account Information
+ * Parses a single Account Information row
  */
 const parseAccountInformationRow = (
   headers: string[],

@@ -1,30 +1,32 @@
 /**
- * Czyste funkcje agregacyjne dla wyników kalkulacji podatkowych
+ * Pure aggregation functions for tax calculation results
  *
- * Agreguje wyniki z wielu transakcji w podsumowanie dla okresu.
- * Oblicza finalny podatek z uwzględnieniem strat i podatku u źródła.
+ * Aggregates results from many transactions into a summary for the period.
+ * Calculates the final tax, accounting for losses and withholding tax.
  *
- * Wszystkie funkcje są pure (brak I/O, HTTP, disk reads).
+ * All functions are pure (no I/O, HTTP, disk reads).
  */
 
 import { PeriodTaxSummary, TaxSummary, Dividend, Interest, Borrow, Trade } from '@shared/models';
 
+import { CAPITAL_GAINS_TAX_RATE } from './tax-rate';
+
 /**
- * Agreguje wyniki kalkulacji podatkowych i oblicza finalny podatek
+ * Aggregates tax calculation results and calculates the final tax
  *
- * Sumuje revenue, cost, income ze wszystkich wyników (akcje, opcje, odsetki, pożyczki, dywidendy).
- * Oblicza podatek od zysków kapitałowych (19% w Polsce).
+ * Sums revenue, cost, income across all results (stocks, options, interest, borrows, dividends).
+ * Calculates capital gains tax (19% in Poland).
  *
- * **Ważne:**
- * - Strata (ujemny income) jest automatycznie odliczana od zysków
- * - Podatek u źródła (dla dywidend) jest odliczany od polskiego podatku
- * - Jeśli totalIncome <= 0, to podatek = 0 (strata nie jest opodatkowana)
+ * **Important:**
+ * - A loss (negative income) is automatically deducted from gains
+ * - Withholding tax (for dividends) is deducted from the Polish tax
+ * - If totalIncome <= 0, tax = 0 (a loss is not taxed)
  *
- * @param trades - Tablica transakcji (akcje, opcje, forex)
- * @param dividends - Tablica dywidend
- * @param interests - Tablica odsetek
- * @param borrows - Tablica opłat za pożyczkę akcji
- * @returns Podsumowanie okresu z obliczonym podatkiem
+ * @param trades - Array of trades (stocks, options, forex)
+ * @param dividends - Array of dividends
+ * @param interests - Array of interest entries
+ * @param borrows - Array of stock borrow fees
+ * @returns Period summary with the calculated tax
  */
 export function aggregateResults(
   trades: Trade[] = [],
@@ -32,7 +34,7 @@ export function aggregateResults(
   interests: Interest[] = [],
   borrows: Borrow[] = []
 ): PeriodTaxSummary {
-  // Zbierz wszystkie TaxSummary z różnych typów transakcji
+  // Collect all TaxSummary entries from the different transaction types
   const allSummaries: TaxSummary[] = [
     ...dividends.map(dividend => dividend.summary),
     ...interests.map(interest => interest.summary),
@@ -40,35 +42,38 @@ export function aggregateResults(
     ...trades.map(trade => trade.summary),
   ];
 
-  // Sumuj podstawowe wartości
+  // Sum the base values
   const totalRevenue = allSummaries.reduce((sum, result) => sum + (result.revenue ?? 0), 0);
   const totalCost = allSummaries.reduce((sum, result) => sum + (result.cost ?? 0), 0);
   const totalIncome = allSummaries.reduce((sum, result) => sum + (result.income ?? 0), 0);
 
-  // Sumuj podatek u źródła (tylko dla dywidend)
-  // totalWithholdingTaxPLN = suma wszystkich podatków u źródła z dywidend
-  // Każdy withholdingTaxPLN jest ujemny (spójność z IBKR, gdzie withholdingTaxAmount jest ujemny)
-  // Więc totalWithholdingTaxPLN będzie ujemny (np. -880.21 PLN)
+  // Sum withholding tax (dividends only)
+  // totalWithholdingTaxPLN = sum of all withholding taxes from dividends
+  // Each withholdingTaxPLN is positive (see calculateDividend), so the sum is too (e.g. 880.21 PLN)
   const totalWithholdingTaxPLN = allSummaries.reduce(
     (sum, result) => sum + (result.withholdingTaxPLN ?? 0),
     0
   );
 
-  // Podatek od zysków kapitałowych w Polsce: zawsze 19% liniowo
-  const taxRate = 0.19;
+  // Deductible part of withholding tax (the 19% cap per dividend is already applied per dividend)
+  const totalWithholdingTaxCreditPLN = allSummaries.reduce(
+    (sum, result) => sum + (result.withholdingTaxCreditPLN ?? 0),
+    0
+  );
 
-  // Oblicz dochód podlegający opodatkowaniu
-  // Strata (ujemny income) jest automatycznie odliczana od zysków
-  // Jeśli totalIncome <= 0, to taxableIncome = 0 (strata nie jest opodatkowana)
+  // Capital gains tax in Poland: always a flat 19%
+  const taxRate = CAPITAL_GAINS_TAX_RATE;
+
+  // Calculate taxable income
+  // A loss (negative income) is automatically deducted from gains
+  // If totalIncome <= 0, taxableIncome = 0 (a loss is not taxed)
   const taxableIncome = Math.max(0, totalIncome);
 
-  // Oblicz podatek przed odliczeniem podatku u źródła
+  // Calculate tax before deducting withholding tax
   const taxAmountBeforeWithholding = taxableIncome * taxRate;
 
-  // Odlicz podatek u źródła (tylko dla dywidend)
-  // totalWithholdingTaxPLN jest ujemny, więc dodajemy go (co jest równoważne odjęciu dodatniej wartości)
-  // Zgodnie z umową o unikaniu podwójnego opodatkowania
-  const taxAmount = Math.max(0, taxAmountBeforeWithholding + totalWithholdingTaxPLN);
+  // Deduct withholding tax (dividends only, up to a 19% cap of the dividend amount)
+  const taxAmount = Math.max(0, taxAmountBeforeWithholding - totalWithholdingTaxCreditPLN);
 
   return {
     totalWithholdingTaxPLN,

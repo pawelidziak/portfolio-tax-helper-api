@@ -1,5 +1,5 @@
 /**
- * Net Asset Value Item (model domenowy)
+ * Net Asset Value Item (domain model)
  */
 export interface NetAssetValueItem {
   assetClass: string;
@@ -11,9 +11,9 @@ export interface NetAssetValueItem {
 }
 
 /**
- * Net Asset Value (model domenowy)
+ * Net Asset Value (domain model)
  *
- * Abstrakcja niezależna od źródła danych
+ * Abstraction independent of the data source
  */
 export interface NetAssetValue {
   items: NetAssetValueItem[];

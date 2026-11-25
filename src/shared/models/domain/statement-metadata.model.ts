@@ -1,7 +1,7 @@
 /**
- * Metadane statement (model domenowy)
+ * Statement metadata (domain model)
  *
- * Abstrakcja niezależna od źródła danych
+ * Abstraction independent of the data source
  */
 export interface StatementMetadata {
   minDate: string;

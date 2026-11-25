@@ -6,7 +6,7 @@ export function calculateBorrowResult(borrow: IBKRBorrowDto, fxRateToPLN: number
 
   const revenue = 0;
   const cost = borrowFeeAbs * fxRateToPLN;
-  const income = revenue - cost; // ujemny
+  const income = revenue - cost; // negative
 
   return { revenue, cost, income };
 }

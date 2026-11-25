@@ -1,5 +1,5 @@
 /**
- * Wyciąga datę z dateTime (format: "YYYY-MM-DD, HH:MM:SS" -> "YYYY-MM-DD")
+ * Extracts the date from dateTime (format: "YYYY-MM-DD, HH:MM:SS" -> "YYYY-MM-DD")
  */
 export const extractDate = (dateTime: string): string => {
   const datePart = dateTime.split(',')[0]?.trim();
@@ -7,27 +7,27 @@ export const extractDate = (dateTime: string): string => {
 };
 
 /**
- * Oblicza datę poprzednią (date - 1 dzień)
+ * Calculates the previous date (date - 1 day)
  *
- * @param date - Data w formacie YYYY-MM-DD lub YYYY-MM-DD, HH:MM:SS
- * @param shift - Liczba dni do cofnięcia (domyślnie 1)
- * @returns Data poprzednia w formacie YYYY-MM-DD
- * @throws Error jeśli data jest nieprawidłowa
+ * @param date - Date in YYYY-MM-DD or YYYY-MM-DD, HH:MM:SS format
+ * @param shift - Number of days to go back (default 1)
+ * @returns Previous date in YYYY-MM-DD format
+ * @throws Error if the date is invalid
  */
 export const getPreviousDay = (date: string, shift: number = 1): string => {
   if (!date || date.trim() === '') {
-    throw new Error('Data nie może być pusta');
+    throw new Error('Date must not be empty');
   }
 
-  // Wyciągnij tylko część daty (YYYY-MM-DD) jeśli jest format z czasem
+  // Extract only the date part (YYYY-MM-DD) if the format includes time
   const datePart = date.split(',')[0]?.trim();
   if (!datePart) {
-    throw new Error(`Nieprawidłowy format daty: ${date}`);
+    throw new Error(`Invalid date format: ${date}`);
   }
 
   const dateWithBuffer = new Date(datePart);
   if (isNaN(dateWithBuffer.getTime())) {
-    throw new Error(`Nieprawidłowa data: ${datePart}`);
+    throw new Error(`Invalid date: ${datePart}`);
   }
 
   dateWithBuffer.setDate(dateWithBuffer.getDate() - shift);

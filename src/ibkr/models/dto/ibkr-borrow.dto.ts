@@ -1,41 +1,41 @@
 /**
- * Model reprezentujący opłaty za pożyczkę akcji (Borrow Fee) z sekcji Borrow Fee Details w raporcie IBKR
+ * Model representing stock borrow fees (Borrow Fee) from the Borrow Fee Details section of the IBKR report
  *
- * To są CZYSTE dane z CSV, bez żadnego wzbogacenia.
+ * This is PURE data from the CSV, with no enrichment.
  */
 
 /**
- * Pojedyncza opłata za pożyczkę akcji z raportu IBKR
- * DTO = Data Transfer Object - dane bezpośrednio z parsowania CSV
+ * A single stock borrow fee from the IBKR report
+ * DTO = Data Transfer Object - data straight from CSV parsing
  */
 export interface IBKRBorrowDto {
-  /** Waluta opłaty: USD, PLN, etc. */
+  /** Fee currency: USD, PLN, etc. */
   currency: string;
 
-  /** Data wartości (Value Date) - Format: "YYYY-MM-DD" */
+  /** Value Date - Format: "YYYY-MM-DD" */
   valueDate: string;
 
-  /** Symbol instrumentu (np. "QQQ") */
+  /** Instrument symbol (e.g. "QQQ") */
   symbol: string;
 
-  /** Ilość pożyczonych akcji */
+  /** Quantity of borrowed shares */
   quantity: number;
 
-  /** Cena akcji */
+  /** Share price */
   price: number;
 
-  /** Wartość zabezpieczenia (collateral value) */
+  /** Collateral value */
   value: number;
 
-  /** Stawka opłaty w % rocznie */
+  /** Fee rate in % per year */
   feeRate: number;
 
   /**
-   * Opłata za pożyczkę (Borrow Fee)
-   * Zawsze ujemna (koszt dla pożyczkobiorcy)
+   * Borrow Fee
+   * Always negative (a cost to the borrower)
    */
   borrowFee: number;
 
-  /** Kod transakcji (np. "Po") */
+  /** Transaction code (e.g. "Po") */
   code: string;
 }

@@ -1,10 +1,10 @@
 /**
- * Parser dla sekcji Open Positions
+ * Parser for the Open Positions section
  *
- * Odpowiedzialność:
- * - Konwersja CsvSection na IBKROpenPositionDto[]
- * - Mapowanie kolumn
- * - Filtrowanie tylko Summary (pomijamy Total z CSV)
+ * Responsibilities:
+ * - Converting CsvSection to IBKROpenPositionDto[]
+ * - Column mapping
+ * - Keeping only Summary rows (skipping Total from the CSV)
  */
 
 import { createDataMap, removeQuotes, parseNumber, getValue } from '@utils';
@@ -13,7 +13,7 @@ import { CurrencyEnum, CsvSection } from '@shared/models';
 import { IBKROpenPositionDto } from '../../models/dto';
 
 /**
- * Nazwy kolumn w sekcji Open Positions pliku CSV IBKR
+ * Column names in the Open Positions section of the IBKR CSV file
  */
 enum CsvColumnNames {
   DATA_DISCRIMINATOR = 'DataDiscriminator',
@@ -36,7 +36,7 @@ enum DataDiscriminatorEnum {
 }
 
 /**
- * Parsuje sekcję Open Positions na IBKROpenPositionDto[]
+ * Parses the Open Positions section into IBKROpenPositionDto[]
  */
 export const parseOpenPositionsSection = (section: CsvSection): IBKROpenPositionDto[] => {
   const positions: IBKROpenPositionDto[] = [];
@@ -50,8 +50,8 @@ export const parseOpenPositionsSection = (section: CsvSection): IBKROpenPosition
 };
 
 /**
- * Parsuje pojedynczy wiersz na IBKROpenPositionDto
- * (tylko Summary, pomijamy Total)
+ * Parses a single row into IBKROpenPositionDto
+ * (Summary only, skipping Total)
  */
 const parseOpenPositionRow = (headers: string[], rowData: string[]): IBKROpenPositionDto | null => {
   const dataMap = createDataMap(headers, rowData);

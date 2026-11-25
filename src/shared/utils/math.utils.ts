@@ -1,18 +1,18 @@
 /**
- * Funkcje pomocnicze do obliczeń matematycznych
+ * Helper functions for mathematical calculations
  */
 
 /**
- * Zaokrągla liczbę do określonej liczby miejsc po przecinku.
+ * Rounds a number to the given number of decimal places.
  *
- * @param value - Wartość do zaokrąglenia
- * @param decimals - Liczba miejsc po przecinku (domyślnie 2)
- * @returns Zaokrąglona wartość
+ * @param value - Value to round
+ * @param decimals - Number of decimal places (default 2)
+ * @returns Rounded value
  *
  * @example
  * roundToDecimals(123.456789, 2) // 123.46
  * roundToDecimals(123.456789, 0) // 123
- * roundToDecimals(123.456789)    // 123.46 (domyślnie 4 miejsca)
+ * roundToDecimals(123.456789)    // 123.46 (4 places by default)
  */
 export const roundToDecimals = (value: number, decimals: number = 6): number => {
   if (!Number.isFinite(value)) {

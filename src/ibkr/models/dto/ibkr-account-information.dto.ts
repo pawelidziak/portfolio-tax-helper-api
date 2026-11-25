@@ -1,5 +1,5 @@
 /**
- * DTO dla sekcji Account Information z CSV IBKR
+ * DTO for the Account Information section from the IBKR CSV
  */
 export interface IBKRAccountInformationDto {
   name: string;

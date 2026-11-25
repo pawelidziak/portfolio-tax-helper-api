@@ -1,23 +1,23 @@
 /**
- * Podsumowanie podatkowe dla okresu
+ * Tax summary for a period
  *
- * Agregacja wyników podatkowych z wielu transakcji w określonym okresie
- * (może być miesiąc, kwartał, rok, lub dowolny inny okres).
- * Zawiera sumy przychodów, kosztów, dochodów oraz obliczony finalny podatek.
+ * Aggregation of tax results from multiple transactions in a given period
+ * (can be a month, quarter, year, or any other period).
+ * Contains totals of revenue, cost, income and the calculated final tax.
  */
 export interface PeriodTaxSummary {
-  /** Suma wszystkich przychodów w PLN */
+  /** Total revenue in PLN */
   totalRevenue: number;
-  /** Suma wszystkich kosztów w PLN */
+  /** Total cost in PLN */
   totalCost: number;
-  /** Suma wszystkich dochodów w PLN (może być ujemny - strata) */
+  /** Total income in PLN (can be negative - a loss) */
   totalIncome: number;
-  /** Suma podatków u źródła w PLN (tylko dla dywidend) */
+  /** Total withholding tax in PLN (dividends only) */
   totalWithholdingTaxPLN: number;
-  /** Stawka podatkowa (zawsze 19% dla zysków kapitałowych w PL) */
+  /** Tax rate (always 19% for capital gains in Poland) */
   taxRate: number;
-  /** Podatek do zapłacenia w PLN (po odliczeniu strat i podatku u źródła) */
+  /** Tax to pay in PLN (after deducting losses and withholding tax) */
   taxAmount: number;
-  /** Dochód podlegający opodatkowaniu (max(0, totalIncome)) */
+  /** Taxable income (max(0, totalIncome)) */
   taxableIncome: number;
 }

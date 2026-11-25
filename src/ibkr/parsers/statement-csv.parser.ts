@@ -1,10 +1,10 @@
 /**
- * Parser CSV dla plików IBKR
+ * CSV parser for IBKR files
  *
- * Odpowiedzialność:
- * - Wczytanie i parsowanie pliku CSV
- * - Wyodrębnienie sekcji Trades i Deposits & Withdrawals
- * - Zwrócenie IBKRStatement (surowe dane z CSV)
+ * Responsibilities:
+ * - Loading and parsing the CSV file
+ * - Extracting the Trades and Deposits & Withdrawals sections
+ * - Returning IBKRStatement (raw CSV data)
  */
 
 import { CsvSection } from '@shared/models';
@@ -26,8 +26,8 @@ import {
 import { IBKRStatement } from '../models/dto';
 
 /**
- * Enum dla typów wierszy w CSV IBKR
- * (nie dla nazw sekcji - nazwy sekcji są przechowywane jako stringi)
+ * Enum for row types in the IBKR CSV
+ * (not for section names - section names are stored as strings)
  */
 export enum CsvSectionEnum {
   HEADER = 'Header',
@@ -35,17 +35,18 @@ export enum CsvSectionEnum {
 }
 
 /**
- * Parsuje CSV IBKR i zwraca surowe dane
- * @param input - Zawartość CSV (string) lub Buffer
+ * Parses the IBKR CSV and returns raw data
+ * @param input - CSV content (string) or Buffer
  */
 export const parseIBKRCsv = async (input: string | Buffer): Promise<IBKRStatement> => {
-  // Konwertuj Buffer na string lub użyj stringa bezpośrednio
+  // Convert the Buffer to a string or use the string directly
   const fileContent = Buffer.isBuffer(input) ? input.toString('utf-8') : input;
 
   const sections = parseCsvSections(fileContent);
   const tradesSection = sections.get('Trades');
   const depositsSection = sections.get('Deposits & Withdrawals');
   const interestSection = sections.get('Interest');
+  const dividendsSection = sections.get('Dividends');
   const withholdingTaxSection = sections.get('Withholding Tax');
   const borrowFeeDetailsSection = sections.get('Borrow Fee Details');
   const statementSection = sections.get('Statement');
@@ -58,16 +59,16 @@ export const parseIBKRCsv = async (input: string | Buffer): Promise<IBKRStatemen
   if (!tradesSection) console.error('Nie znaleziono sekcji "Trades" w CSV');
 
   const accountInformation = parseAccountInformationSection(accountInformationSection);
-  // Parsuj metadane (zakres dat i waluty)
+  // Parse metadata (date range and currencies)
   const metadata = parseStatementMetadata(statementSection, cashReportSection);
-  // dodaj base currency do zbioru walut (jest w innej sekcji)
+  // add the base currency to the currency set (it is in another section)
   metadata.currencies.add(accountInformation?.baseCurrency);
 
   return {
     deposits: depositsSection ? parseDepositsSection(depositsSection) : [],
     trades: tradesSection ? parseTradesSection(tradesSection) : [],
     interests: interestSection ? parseInterestSection(interestSection) : [],
-    dividends: parseDividendsSection(interestSection, withholdingTaxSection),
+    dividends: parseDividendsSection(dividendsSection, interestSection, withholdingTaxSection),
     borrows: borrowFeeDetailsSection ? parseBorrowsSection(borrowFeeDetailsSection) : [],
     accountInformation,
     netAssetValue: parseNetAssetValueSection(netAssetValueSection),
@@ -77,13 +78,13 @@ export const parseIBKRCsv = async (input: string | Buffer): Promise<IBKRStatemen
 };
 
 /**
- * Parsuje plik CSV na sekcje (Pure Function)
+ * Parses the CSV file into sections (Pure Function)
  *
  * Format IBKR CSV:
  * Section,Header,col1,col2,...
  * Section,Data,val1,val2,...
  *
- * Ta sama sekcja może mieć wiele nagłówków (np. Trades dla różnych kategorii)
+ * The same section can have multiple headers (e.g. Trades for different categories)
  */
 const parseCsvSections = (fileContent: string): Map<string, CsvSection> => {
   const lines = fileContent.split('\n');
@@ -99,27 +100,27 @@ const parseCsvSections = (fileContent: string): Map<string, CsvSection> => {
     const columns = parseCsvLine(line);
     if (columns.length < 2) continue;
 
-    // Nowa sekcja?
+    // New section?
     if (columns[1] === CsvSectionEnum.HEADER) {
-      // Zapisz poprzednią sekcję
+      // Save the previous section
       if (currentSection && currentRows.length > 0) {
         sections = addSection(sections, currentSection, currentHeaders, currentRows);
       }
 
-      // Rozpocznij nową sekcję
+      // Start a new section
       currentSection = columns[0];
       currentHeaders = columns.slice(2);
       currentRows = [];
       continue;
     }
 
-    // Wiersz danych?
+    // Data row?
     if (currentSection && columns[0] === currentSection && columns[1] === CsvSectionEnum.DATA) {
       currentRows.push(columns.slice(2));
     }
   }
 
-  // Zapisz ostatnią sekcję
+  // Save the last section
   if (currentSection && currentRows.length > 0) {
     sections = addSection(sections, currentSection, currentHeaders, currentRows);
   }
@@ -128,9 +129,9 @@ const parseCsvSections = (fileContent: string): Map<string, CsvSection> => {
 };
 
 /**
- * Dodaje sekcję do mapy (łączy z poprzednią jeśli istnieje) (Pure Function)
+ * Adds a section to the map (merges with the previous one if it exists) (Pure Function)
  *
- * @returns Nowa mapa z dodaną/połączoną sekcją
+ * @returns New map with the added/merged section
  */
 const addSection = (
   sections: Map<string, CsvSection>,
@@ -142,14 +143,14 @@ const addSection = (
   const existing = newSections.get(name);
 
   if (existing) {
-    // Połącz wiersze z istniejącą sekcją (immutable)
+    // Merge rows with the existing section (immutable)
     newSections.set(name, {
       name,
-      headers: existing.headers, // Używamy istniejących nagłówków
-      rows: [...existing.rows, ...rows], // Nowa tablica z połączonymi wierszami
+      headers: existing.headers, // Using the existing headers
+      rows: [...existing.rows, ...rows], // New array with the merged rows
     });
   } else {
-    // Utwórz nową sekcję
+    // Create a new section
     newSections.set(name, { name, headers, rows });
   }
 

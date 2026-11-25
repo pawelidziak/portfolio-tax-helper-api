@@ -1,94 +1,94 @@
 /**
- * Model reprezentujący transakcję z sekcji Trades w raporcie IBKR
+ * Model representing a trade from the Trades section of the IBKR report
  *
- * Dokumentacja: https://www.ibkrguides.com/reportingreference/reportguide/trades_default.htm
+ * Documentation: https://www.ibkrguides.com/reportingreference/reportguide/trades_default.htm
  *
- * To są CZYSTE dane z CSV, bez żadnego wzbogacenia.
+ * This is PURE data from the CSV, with no enrichment.
  */
 
 /**
- * Pojedyncza transakcja z raportu IBKR (surowe dane z CSV)
- * DTO = Data Transfer Object - dane bezpośrednio z parsowania CSV
+ * A single trade from the IBKR report (raw CSV data)
+ * DTO = Data Transfer Object - data straight from CSV parsing
  */
 export interface IBKRTradeDto {
-  /** Typ rekordu: Order (transakcja), SubTotal (podsumowanie), Total (suma) */
+  /** Record type: Order (trade), SubTotal (subtotal), Total (total) */
   dataDiscriminator: string;
 
-  /** Kategoria aktywów (surowa wartość z IBKR: "Stocks", "Equity and Index Options", "Forex") */
+  /** Asset category (raw IBKR value: "Stocks", "Equity and Index Options", "Forex") */
   assetCategory: string;
 
-  /** Waluta transakcji: USD, PLN, etc. */
+  /** Transaction currency: USD, PLN, etc. */
   currency: string;
 
-  /** Symbol instrumentu, który został przedmiotem transakcji */
+  /** Symbol of the instrument that was traded */
   symbol: string;
 
-  /** Data i czas wykonania transakcji (Format: "YYYY-MM-DD, HH:MM:SS") */
+  /** Trade execution date and time (Format: "YYYY-MM-DD, HH:MM:SS") */
   dateTime: string;
 
   /**
-   * Liczba jednostek w transakcji.
-   * Wartości ujemne oznaczają sprzedaż, dodatnie - zakup.
+   * Number of units in the trade.
+   * Negative values mean a sell, positive ones a buy.
    */
   quantity: number;
 
   /**
-   * T. Price - Cena transakcji (transaction price)
-   * Cena po której została wykonana transakcja.
+   * T. Price - Transaction price
+   * Price at which the trade was executed.
    */
   tradePrice: number;
 
   /**
-   * C. Price - Cena zamknięcia instrumentu (closing price)
-   * Cena zamknięcia instrumentu w dniu transakcji.
+   * C. Price - Closing price
+   * Instrument closing price on the trade date.
    */
   closingPrice: number;
 
   /**
-   * Proceeds - Przychód z transakcji
-   * Obliczany jako ilość * cena transakcji.
-   * Wartość ujemna dla zakupów, dodatnia dla sprzedaży.
+   * Proceeds - Trade proceeds
+   * Calculated as quantity * trade price.
+   * Negative for buys, positive for sells.
    */
   proceeds: number;
 
   /**
-   * Comm/Fee - Prowizja i opłaty
-   * Całkowita kwota prowizji i opłat za transakcję.
-   * Dla celów podstawy kosztowej i zrealizowanego zysku/straty, prowizje są netto.
+   * Comm/Fee - Commission and fees
+   * Total amount of commission and fees for the trade.
+   * For cost basis and realized profit/loss purposes, commissions are netted.
    */
   commissionFee: number;
 
   /**
-   * Basis - Podstawa kosztowa
-   * Dla transakcji otwierającej: odwrotność proceeds + prowizja + kwota podatku.
-   * Dla transakcji zamykającej: podstawa kosztowa z transakcji otwierającej.
+   * Basis - Cost basis
+   * For an opening trade: the negation of proceeds + commission + tax amount.
+   * For a closing trade: the cost basis from the opening trade.
    */
   basis: number;
 
   /**
-   * Realized P/L - Zrealizowany zysk/strata
-   * Obliczany jako: proceeds transakcji zamykającej + prowizje + basis.
+   * Realized P/L - Realized profit/loss
+   * Calculated as: proceeds of the closing trade + commissions + basis.
    *
-   * Uwaga: Gdy pozycja opcji jest przypisana lub wykonana, zrealizowany P/L
-   * nie jest obliczany dla samej pozycji opcji. Zamiast tego, premia otrzymana/zapłacona
-   * przy pierwotnej sprzedaży/zakupie opcji jest uwzględniana w P/L zrealizowanym,
-   * gdy pozycja akcji wynikająca z przypisania/wykonania opcji jest zamykana.
+   * Note: When an option position is assigned or exercised, the realized P/L
+   * is not calculated for the option position itself. Instead, the premium received/paid
+   * on the original sale/purchase of the option is included in the realized P/L
+   * when the stock position resulting from the option assignment/exercise is closed.
    */
   realizedPL: number;
 
   /**
-   * MTM P/L - Mark-to-Market zysk/strata
-   * Różnica między ceną transakcji a ceną zamknięcia pomnożona przez ilość.
-   * Dla MTM P/L prowizje nie są netto i są uwzględniane jako osobna linia
-   * w podsumowaniu wydajności MTM powyżej.
+   * MTM P/L - Mark-to-Market profit/loss
+   * Difference between the trade price and the closing price, multiplied by quantity.
+   * For MTM P/L, commissions are not netted and are included as a separate line
+   * in the MTM performance summary above.
    */
   mtmPL: number;
 
   /**
-   * Code - Kod skrótu transakcji
-   * Kody opisujące typ transakcji (np. "A;O" - Assignment/Opening,
+   * Code - Trade code abbreviation
+   * Codes describing the trade type (e.g. "A;O" - Assignment/Opening,
    * "C" - Closing, "C;P" - Closing/Partial, "O" - Opening, "C;Ep" - Closing/Expired)
-   * Pełna lista kodów znajduje się w sekcji Codes raportu.
+   * The full list of codes is in the Codes section of the report.
    */
   code?: string;
 }

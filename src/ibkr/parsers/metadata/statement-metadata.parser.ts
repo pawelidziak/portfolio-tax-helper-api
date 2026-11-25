@@ -1,9 +1,9 @@
 /**
- * Parser dla metadanych z sekcji Statement i Cash Report
+ * Parser for metadata from the Statement and Cash Report sections
  *
- * Odpowiedzialność:
- * - Wyciąganie zakresu dat z sekcji Statement
- * - Wyciąganie walut z sekcji Cash Report
+ * Responsibilities:
+ * - Extracting the date range from the Statement section
+ * - Extracting currencies from the Cash Report section
  */
 
 import { createDataMap, getValue } from '@utils';
@@ -12,7 +12,7 @@ import { CsvSection } from '@shared/models';
 import { IBKRStatementMetadata } from '../../models/dto';
 
 /**
- * Nazwy kolumn w sekcji Cash Report
+ * Column names in the Cash Report section
  */
 enum CashReportColumnNames {
   CURRENCY_SUMMARY = 'Currency Summary',
@@ -20,7 +20,7 @@ enum CashReportColumnNames {
 }
 
 /**
- * Nazwy kolumn w sekcji Statement
+ * Column names in the Statement section
  */
 enum StatementColumnNames {
   FIELD_VALUE = 'Field Value',
@@ -28,10 +28,10 @@ enum StatementColumnNames {
 }
 
 /**
- * Parsuje zakres dat z sekcji Statement
+ * Parses the date range from the Statement section
  *
  * Format: "January 1, 2025 - November 21, 2025"
- * Zwraca: { minDate: "2025-01-01", maxDate: "2025-11-21" }
+ * Returns: { minDate: "2025-01-01", maxDate: "2025-11-21" }
  */
 export const parseStatementPeriod = (
   statementSection: CsvSection | undefined
@@ -40,7 +40,7 @@ export const parseStatementPeriod = (
     return { minDate: '', maxDate: '' };
   }
 
-  // Znajdź wiersz z Period
+  // Find the row with Period
   for (const rowData of statementSection.rows) {
     const dataMap = createDataMap(statementSection.headers, rowData);
     const fieldName = getValue(dataMap, StatementColumnNames.FIELD_NAME);
@@ -57,13 +57,13 @@ export const parseStatementPeriod = (
 };
 
 /**
- * Parsuje string okresu na daty (Pure Function)
+ * Parses a period string into dates (Pure Function)
  *
  * Format: "January 1, 2025 - November 21, 2025"
- * Zwraca: { minDate: "2025-01-01", maxDate: "2025-11-21" }
+ * Returns: { minDate: "2025-01-01", maxDate: "2025-11-21" }
  */
 const parsePeriodString = (period: string): { minDate: string; maxDate: string } => {
-  // Usuń cudzysłowy jeśli są
+  // Remove quotes if present
   const cleanPeriod = period.replace(/^"|"$/g, '').trim();
 
   // Format: "January 1, 2025 - November 21, 2025"
@@ -82,21 +82,21 @@ const parsePeriodString = (period: string): { minDate: string; maxDate: string }
 };
 
 /**
- * Parsuje datę z formatu "January 1, 2025" na "2025-01-01" (Pure Function)
+ * Parses a date from the format "January 1, 2025" to "2025-01-01" (Pure Function)
  *
- * Używa bardziej niezawodnej metody parsowania, która nie zależy od locale.
- * Format IBKR: "Month Day, Year" (np. "January 1, 2025")
+ * Uses a more reliable parsing method that does not depend on the locale.
+ * IBKR format: "Month Day, Year" (e.g. "January 1, 2025")
  */
 const parseDateString = (dateStr: string): string | null => {
   try {
-    // Usuń cudzysłowy jeśli są
+    // Remove quotes if present
     const cleanDate = dateStr.replace(/^"|"$/g, '').trim();
 
-    // Format: "January 1, 2025" lub "November 21, 2025"
+    // Format: "January 1, 2025" or "November 21, 2025"
     // Regex: (Month) (Day), (Year)
     const match = cleanDate.match(/^(\w+)\s+(\d+),\s+(\d+)$/);
     if (!match) {
-      // Fallback do standardowego parsowania
+      // Fall back to standard parsing
       const date = new Date(cleanDate);
       if (isNaN(date.getTime())) {
         return null;
@@ -109,7 +109,7 @@ const parseDateString = (dateStr: string): string | null => {
 
     const [, monthName, day, year] = match;
 
-    // Mapuj nazwę miesiąca na numer (angielskie nazwy)
+    // Map the month name to a number (English names)
     const monthMap: Record<string, string> = {
       January: '01',
       February: '02',
@@ -138,13 +138,13 @@ const parseDateString = (dateStr: string): string | null => {
 };
 
 /**
- * Parsuje waluty z sekcji Cash Report
+ * Parses currencies from the Cash Report section
  *
- * W sekcji Cash Report każda waluta ma wiersz z "Starting Cash" lub podobnym
+ * In the Cash Report section each currency has a row with "Starting Cash" or similar
  * Format: Cash Report,Data,Starting Cash,USD,0,0,0
  *         Cash Report,Data,Starting Cash,PLN,0,0,0
  *
- * Waluty są w kolumnie "Currency", pomijamy "Base Currency Summary"
+ * Currencies are in the "Currency" column, "Base Currency Summary" is skipped
  */
 export const parseCashReportCurrencies = (
   cashReportSection: CsvSection | undefined
@@ -155,16 +155,16 @@ export const parseCashReportCurrencies = (
     return currencies;
   }
 
-  // Znajdź wszystkie wiersze z walutami (pomijamy "Base Currency Summary")
+  // Find all rows with currencies (skipping "Base Currency Summary")
   for (const rowData of cashReportSection.rows) {
     const dataMap = createDataMap(cashReportSection.headers, rowData);
     const currency = getValue(dataMap, CashReportColumnNames.CURRENCY);
 
-    // Pomijamy "Base Currency Summary" i puste wartości
-    // Waluta powinna być 3-literowym kodem (USD, PLN, EUR, itp.)
+    // Skip "Base Currency Summary" and empty values
+    // A currency should be a 3-letter code (USD, PLN, EUR, etc.)
     if (currency && currency !== 'Base Currency Summary' && currency.trim() !== '') {
       const cleanCurrency = currency.trim().toUpperCase();
-      // Walidacja: tylko 3-literowe kody walut
+      // Validation: only 3-letter currency codes
       if (/^[A-Z]{3}$/.test(cleanCurrency)) {
         currencies.add(cleanCurrency);
       }
@@ -175,7 +175,7 @@ export const parseCashReportCurrencies = (
 };
 
 /**
- * Parsuje metadane z CSV (zakres dat i waluty)
+ * Parses metadata from the CSV (date range and currencies)
  */
 export const parseStatementMetadata = (
   statementSection: CsvSection | undefined,

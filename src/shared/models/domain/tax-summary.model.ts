@@ -1,45 +1,49 @@
 /**
- * Podsumowanie podatkowe transakcji
+ * Tax summary of a transaction
  *
- * Zawiera obliczone wartości: przychód, koszt, dochód oraz informacje o podatku
- * Kurs wymiany jest w osobnym polu Record.exchangeRate
+ * Contains calculated values: revenue, cost, income and tax information
+ * The exchange rate is in a separate field, Record.exchangeRate
  */
 export interface TaxSummary {
   /**
-   * Revenue - Przychód z transakcji w PLN
-   * Dodawane przez mapper.
-   * Pieniądze, które wpływają do Ciebie w wyniku transakcji
-   * (sprzedaż akcji, premia z opcji, otwarcie shorta).
-   * Obliczone jako: proceeds × nbpRate (gdy proceeds > 0)
+   * Revenue - Trade revenue in PLN
+   * Added by the mapper.
+   * Money that flows to you as a result of the trade
+   * (selling shares, option premium, opening a short).
+   * Calculated as: proceeds × nbpRate (when proceeds > 0)
    */
   revenue?: number;
 
   /**
-   * Cost - Koszt transakcji w PLN
-   * Dodawane przez mapper.
-   * Pieniądze, które wypływają od Ciebie, żeby ten przychód w ogóle mógł powstać
-   * (kupno akcji, odkupienie shorta, zapłacona premia, prowizje).
-   * Obliczone jako: -proceeds × nbpRate (gdy proceeds < 0) + commissionFee × nbpRate
+   * Cost - Trade cost in PLN
+   * Added by the mapper.
+   * Money that flows out from you so that this revenue can arise at all
+   * (buying shares, buying back a short, premium paid, commissions).
+   * Calculated as: -proceeds × nbpRate (when proceeds < 0) + commissionFee × nbpRate
    */
   cost?: number;
 
   /**
-   * Income - Dochód z transakcji w PLN
-   * Dodawane przez mapper.
-   * Twój wynik podatkowy z inwestycji (może być dodatni - zysk, lub ujemny - strata).
-   * Obliczone jako: revenue - cost
+   * Income - Trade income in PLN
+   * Added by the mapper.
+   * Your tax result from the investment (can be positive - a profit, or negative - a loss).
+   * Calculated as: revenue - cost
    *
-   * Uwaga: Strata (ujemny income) może być odliczona od zysków kapitałowych.
-   * Podatek obliczamy dopiero po agregacji wszystkich transakcji.
+   * Note: A loss (negative income) can be deducted from capital gains.
+   * Tax is calculated only after aggregating all trades.
    */
   income?: number;
 
   /**
-   * Withholding Tax PLN - Podatek u źródła zapłacony za granicą (w PLN)
-   * Tylko dla dywidend z podatkiem u źródła (np. US 15%)
-   * Wartość ujemna (spójność z IBKR, gdzie withholdingTaxAmount jest ujemny)
-   * Może być odliczony od polskiego podatku zgodnie z umową o unikaniu podwójnego opodatkowania
-   * W agregacji: dodajemy ujemną wartość do podatku, co jest równoważne odjęciu dodatniej
+   * Withholding Tax PLN - Withholding tax paid abroad (in PLN, positive value)
+   * Only for dividends subject to withholding tax (e.g. US 15%)
    */
   withholdingTaxPLN?: number;
+
+  /**
+   * Withholding Tax Credit PLN - Portion of the withholding tax that may be deducted from Polish tax
+   * Calculated as: min(withholdingTaxPLN, 19% × revenue), in line with the double taxation
+   * treaty and the limit under the PIT act
+   */
+  withholdingTaxCreditPLN?: number;
 }

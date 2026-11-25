@@ -1,10 +1,10 @@
 /**
- * Parser dla sekcji Borrow Fee Details
+ * Parser for the Borrow Fee Details section
  *
- * Odpowiedzialność:
- * - Konwersja CsvSection na IBKRBorrowDto[]
- * - Mapowanie kolumn
- * - Filtrowanie tylko Data (pomijamy Total z CSV)
+ * Responsibilities:
+ * - Converting CsvSection to IBKRBorrowDto[]
+ * - Column mapping
+ * - Keeping only Data rows (skipping Total from the CSV)
  */
 
 import { createDataMap, removeQuotes, parseNumber, getValue } from '@utils';
@@ -13,7 +13,7 @@ import { CsvSection } from '@shared/models';
 import { IBKRBorrowDto } from '../../models/dto';
 
 /**
- * Nazwy kolumn w sekcji Borrow Fee Details pliku CSV IBKR
+ * Column names in the Borrow Fee Details section of the IBKR CSV file
  */
 enum CsvColumnNames {
   VALUE_DATE = 'Value Date',
@@ -28,7 +28,7 @@ enum CsvColumnNames {
 }
 
 /**
- * Parsuje sekcję Borrow Fee Details na IBKRBorrowDto[]
+ * Parses the Borrow Fee Details section into IBKRBorrowDto[]
  */
 export const parseBorrowsSection = (section: CsvSection): IBKRBorrowDto[] => {
   const borrows: IBKRBorrowDto[] = [];
@@ -42,26 +42,26 @@ export const parseBorrowsSection = (section: CsvSection): IBKRBorrowDto[] => {
 };
 
 /**
- * Parsuje pojedynczy wiersz na IBKRBorrowDto
- * (pomijamy Total z CSV)
+ * Parses a single row into IBKRBorrowDto
+ * (skipping Total from the CSV)
  */
 const parseBorrowRow = (headers: string[], rowData: string[]): IBKRBorrowDto | null => {
   const dataMap = createDataMap(headers, rowData);
 
-  // Sprawdź czy to nie Total - Total może mieć "Total" w kolumnie Currency lub pustą walutę
+  // Check that this is not Total - Total may have "Total" in the Currency column or an empty currency
   const currency = getValue(dataMap, CsvColumnNames.CURRENCY);
   const currencyTrimmed = currency ? currency.trim() : '';
   if (!currencyTrimmed || currencyTrimmed.toLowerCase() === 'total') {
-    return null; // Pomijamy wiersze Total
+    return null; // Skip Total rows
   }
 
   const borrowFee = parseNumber(getValue(dataMap, CsvColumnNames.BORROW_FEE));
   if (borrowFee === null || borrowFee === undefined) return null;
 
-  // Walidacja daty - bez daty nie możemy znaleźć kursu NBP
+  // Date validation - without a date we cannot find the NBP rate
   const valueDate = getValue(dataMap, CsvColumnNames.VALUE_DATE);
   if (!valueDate || valueDate.trim() === '') {
-    return null; // Pomijamy wpisy bez daty
+    return null; // Skip entries without a date
   }
 
   return {

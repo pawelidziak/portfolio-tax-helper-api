@@ -1,22 +1,22 @@
 /**
- * Akcja na pozycji w ramach transakcji
+ * Action on a position within a trade
  */
 export interface TradeAction {
   type: TradeActionType;
   symbol: string;
-  /** Ilość w ramach tej jednej akcji (może być część całego trade'u) */
+  /** Quantity within this single action (may be part of the whole trade) */
   qty: number;
-  /** Cena transakcyjna per 1 szt. w PLN (dla open: costPerLot / revenuePerLot, dla close: closePricePLN) */
+  /** Trade price per 1 unit in PLN (for open: costPerLot / revenuePerLot, for close: closePricePLN) */
   tradePricePerLotPLN: number;
-  /** Dla CLOSE_*: cena z otwarcia danego lota (cost basis / premia) */
+  /** For CLOSE_*: price at which the given lot was opened (cost basis / premium) */
   lotPricePerLotPLN?: number;
-  /** Łączna pozycja (signed) przed akcją dla tego symbolu */
+  /** Total position (signed) before the action for this symbol */
   beforeQty: number;
-  /** Łączna pozycja (signed) po tej akcji dla tego symbolu */
+  /** Total position (signed) after this action for this symbol */
   afterQty: number;
 }
 
 /**
- * Typ akcji transakcji
+ * Trade action type
  */
 export type TradeActionType = 'CLOSE_SHORT' | 'CLOSE_LONG' | 'OPEN_SHORT' | 'OPEN_LONG';

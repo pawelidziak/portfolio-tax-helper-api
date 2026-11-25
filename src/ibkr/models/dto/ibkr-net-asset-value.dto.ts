@@ -1,5 +1,5 @@
 /**
- * DTO dla pojedynczego wiersza Net Asset Value z CSV IBKR
+ * DTO for a single Net Asset Value row from the IBKR CSV
  */
 export interface IBKRNetAssetValueItemDto {
   assetClass: string;
@@ -11,9 +11,9 @@ export interface IBKRNetAssetValueItemDto {
 }
 
 /**
- * DTO dla sekcji Net Asset Value z CSV IBKR
+ * DTO for the Net Asset Value section from the IBKR CSV
  */
 export interface IBKRNetAssetValueDto {
   items: IBKRNetAssetValueItemDto[];
-  timeWeightedRateOfReturn?: string; // np. "-4.729667797%"
+  timeWeightedRateOfReturn?: string; // e.g. "-4.729667797%"
 }
