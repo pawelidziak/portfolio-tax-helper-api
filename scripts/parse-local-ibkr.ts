@@ -3,19 +3,15 @@ import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
 
 import {
-  aggregateTaxFromRealizedTradesByCategory,
-  mapIBKRRealizedTradesToRealizedTrades,
   mapIBKROpenPositionsToOpenPositions,
   mapIBKRDividendsToDividends,
   mapIBKRInterestsToInterests,
   mapIBKRBorrowsToBorrows,
-  parseRealizedTradesCsv,
   mapIBKRTradesToTrades,
   parseIBKRCsv,
 } from '../src/ibkr';
 import { OperationCategoryEnum } from '../src/shared/models';
 import { getExchangeRates } from '../src/shared/api/nbp.api';
-import { extractDate } from '../src/shared/utils/date.utils';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,7 +27,7 @@ const main = async () => {
   try {
     const ibkrStatement = await parseIBKRCsv(file);
 
-    // Pobierz kursy NBP z metadanych
+    // Fetch NBP rates from metadata
     const metadata = ibkrStatement.metadata;
     if (!metadata.minDate || !metadata.maxDate || metadata.currencies.size === 0) {
       throw new Error('Brak metadanych (zakres dat lub waluty) w CSV');
@@ -72,31 +68,9 @@ const main = async () => {
 
     // console.log(x);
   } catch (error) {
-    console.error('❌ Błąd:', error);
+    console.error('❌ Error:', error);
     process.exit(1);
   }
 };
 
-const main2 = async () => {
-  const file = getFileContent(process.argv[2] || 'example_data/trades.csv');
-  const realizedTrades = parseRealizedTradesCsv(file);
-
-  const dates = realizedTrades.map(trade => trade.dateTime).sort( (a, b) => new Date(a).getTime() - new Date(b).getTime() );
-  const minDate = extractDate(dates[0]);
-  const maxDate = extractDate(dates[dates.length - 1]);
-
-  const exchangeRatesCache = await getExchangeRates(
-    new Set(['USD', 'PLN']),
-    minDate,
-    maxDate,
-    10
-  );
-
-  const realizedTradesWithExchangeRates = mapIBKRRealizedTradesToRealizedTrades(realizedTrades, exchangeRatesCache);
-
-  console.log(realizedTradesWithExchangeRates);
-  const byCategory = aggregateTaxFromRealizedTradesByCategory(realizedTradesWithExchangeRates);
-  console.log(byCategory);
-};
-
-main2();
+main();

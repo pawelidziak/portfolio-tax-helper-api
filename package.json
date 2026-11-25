@@ -2,7 +2,7 @@
   "name": "portfolio-api",
   "version": "1.0.0",
   "type": "module",
-  "description": "Projekt AWS Lambda z API Gateway używający AWS CDK",
+  "description": "Serverless backend for a Polish capital-gains tax helper for IBKR statements (AWS CDK, Lambda, API Gateway)",
   "scripts": {
     "generate:openapi": "tsx scripts/generate-openapi.ts",
     "deploy": "sh -c 'env=${1:-dev} cdk deploy --context env=$env --profile portfolio-api' --",
@@ -16,7 +16,12 @@
     "format:fix": "prettier --write .",
     "fix:all": "npm run format:fix && npm run lint:fix",
     "check:aws": "aws sts get-caller-identity --profile portfolio-api",
-    "parse:local:ibkr": "tsx scripts/parse-local-ibkr.ts"
+    "test": "tsx --test test/*.test.ts",
+    "build:demo-fixture": "tsx scripts/build-demo-fixture.ts",
+    "parse:local:ibkr": "tsx scripts/parse-local-ibkr.ts",
+    "myfund": "tsx scripts/map-to-myfund.ts",
+    "stack:pause": "powershell -ExecutionPolicy Bypass -File scripts/pause-stack.ps1",
+    "stack:resume": "powershell -ExecutionPolicy Bypass -File scripts/resume-stack.ps1"
   },
   "keywords": [
     "aws",
@@ -25,7 +30,7 @@
     "api-gateway",
     "typescript"
   ],
-  "author": "",
+  "author": "Pawel Idziak",
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.0.0",
