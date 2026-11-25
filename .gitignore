@@ -9,6 +9,7 @@ example_data
 *.js
 *.d.ts
 !jest.config.js
+!eslint.config.js
 lib
 
 # Dependencies
