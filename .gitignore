@@ -44,3 +44,6 @@ build
 openapi.json
 temp-schemas/
 
+# Stack pause/resume state (contains API key value — never commit)
+.stack-state/
+

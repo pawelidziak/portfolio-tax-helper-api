@@ -6,6 +6,7 @@ import { LAMBDA_FUNCTIONS } from './core/config';
 
 export interface LambdaApiStackProps extends StackProps {
   environment: string;
+  allowedOrigins?: string[];
 }
 
 /**
@@ -19,7 +20,11 @@ export class LambdaApiStack extends Stack {
   constructor(scope: Construct, id: string, props: LambdaApiStackProps) {
     super(scope, id, props);
 
-    const apiProps = { environment: props.environment, enableApiKey: true };
+    const apiProps = {
+      environment: props.environment,
+      enableApiKey: true,
+      allowedOrigins: props.allowedOrigins,
+    };
     const { api } = apiGatewayFactory(this, apiProps);
 
     const { addEndpoints } = apiRouterFactory(api);

@@ -1,271 +1,93 @@
-# Portfolio API - AWS CDK Projekt
+# Portfolio API
 
-Projekt AWS CDK z funkcjami Lambda i API Gateway. Zorganizowany w strukturze z factory pattern i centralną konfiguracją.
+Serverless backend for a Polish capital-gains tax helper for Interactive Brokers (IBKR) users. It parses an IBKR Activity Statement (CSV), converts every operation to PLN with the NBP rate from the business day before the transaction, and runs a FIFO tax engine for stocks and options. The frontend lives in the companion `portfolio-turbo` repository.
 
-- **Factory Pattern** - modułowe komponenty CDK (api-gateway-factory, lambda-factory, api-router-factory)
-- **Centralna konfiguracja** - wszystkie Lambda functions w jednym miejscu (`lambda.config.ts`)
-- **TypeScript** - pełne wsparcie typów
-- **Error handling** - centralna obsługa błędów z custom error classes
-- **Multipart parser** - obsługa przesyłania plików przez multipart/form-data
-- **API Gateway** - REST API z API Key authentication
-- **CORS** - skonfigurowany dla wszystkich originów
+> Educational project. Results are auxiliary and are not tax advice - verify them before filing a tax return.
 
-## Struktura projektu
+## What it does
+
+- Parses the IBKR CSV sections: trades, open positions, dividends, withholding tax, interest, borrow fees, deposits, net asset value, account information.
+- Fetches NBP table A rates once per currency (in chunks, because NBP rejects ranges over 367 days) and walks back to the previous business day when a rate is missing.
+- Computes revenue, cost and income per operation: FIFO lots, long and short positions, options with the x100 multiplier, expirations, commissions carried from the opening trade.
+- Aggregates the period: income, 19% tax, minus foreign withholding tax already paid on dividends (credit capped at 19% of each dividend).
+- Exposes the contract as OpenAPI (`GET /api-models`), which the frontend uses to generate its types.
+
+The exact rules are documented in [src/ibkr/calculations/README.md](src/ibkr/calculations/README.md); a plain-language summary of the Polish rules is in [docs/tax-rules.md](docs/tax-rules.md).
+
+## API
+
+| Method | Path | Auth | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/ibkr-csv-parser` | API key | `multipart/form-data` with the CSV file; returns `StatementResponseDto` |
+| `GET` | `/api-models` | none | OpenAPI models for client code generation |
+
+## Architecture
 
 ```
-portfolio-api/
-├── bin/
-│   └── app.ts                           # Punkt wejścia aplikacji CDK
-├── src/
-│   ├── core/                            # Core funkcjonalność
-│   │   ├── calculations/                # Kalkulatory finansowe (SRP)
-│   │   │   ├── options-calculator.ts    # Kalkulacje dla opcji
-│   │   │   ├── stocks-calculator.ts     # Kalkulacje dla akcji
-│   │   │   └── index.ts
-│   │   ├── config/                      # Konfiguracja
-│   │   │   ├── api-messages.config.ts   # Komunikaty błędów/sukcesu
-│   │   │   ├── lambda.config.ts         # Konfiguracja Lambda functions
-│   │   │   └── index.ts
-│   │   ├── factories/                   # Factory functions (CDK)
-│   │   │   ├── api-gateway-factory.ts   # Tworzenie API Gateway
-│   │   │   ├── api-router-factory.ts    # Routing endpointów
-│   │   │   ├── lambda-factory.ts        # Tworzenie funkcji Lambda
-│   │   │   └── index.ts
-│   │   └── models/                      # Modele dla CDK/Core
-│   │       ├── api-endpoint.model.ts    # Model endpointu API
-│   │       ├── errors.model.ts          # Custom error classes
-│   │       ├── lambda.model.ts          # Model konfiguracji Lambda
-│   │       └── index.ts
-│   ├── lambdas/                         # Funkcje Lambda
-│   │   └── ibkr-csv-parser/
-│   │       └── index.ts                 # IBKR CSV parser handler
-│   ├── models/                          # Modele domenowe
-│   │   ├── asset-category.enum.ts       # Kategorie aktywów
-│   │   ├── csv-section.model.ts         # Model sekcji CSV
-│   │   ├── currency.enum.ts             # Waluty
-│   │   ├── exchange-rate.model.ts       # Kursy wymiany
-│   │   ├── ibkr-statement.model.ts      # Statement IBKR
-│   │   ├── ibkr-trade.dto.ts            # DTO transakcji z CSV
-│   │   ├── nbp-rate.dto.ts              # DTO odpowiedzi API NBP
-│   │   ├── trade-summary.model.ts       # Podsumowanie transakcji
-│   │   ├── trade.model.ts               # Model transakcji
-│   │   └── index.ts
-│   ├── parsers/                         # Parsery (CSV, multipart)
-│   │   ├── ibkr-statement-csv.parser.ts # Parser plików CSV IBKR
-│   │   ├── ibkr-trades.parser.ts        # Parser sekcji Trades
-│   │   ├── multipart-parser.ts          # Parser multipart/form-data
-│   │   └── index.ts
-│   ├── services/                        # Serwisy biznesowe
-│   │   ├── nbp.service.ts               # Komunikacja z API NBP
-│   │   ├── trade-mapper.service.ts      # Mapowanie transakcji IBKR
-│   │   └── index.ts
-│   ├── utils/                           # Funkcje pomocnicze (SRP)
-│   │   ├── csv-parse.utils.ts           # Parsowanie linii CSV
-│   │   ├── date.utils.ts                # Operacje na datach
-│   │   ├── error-handler.utils.ts       # Obsługa błędów
-│   │   ├── response.utils.ts            # Tworzenie odpowiedzi HTTP
-│   │   ├── validation.utils.ts          # Walidacja (Zod)
-│   │   └── index.ts
-│   └── stack.ts                         # Główny stack CDK
-├── .env.example                         # Przykładowa konfiguracja środowiska
-├── .gitignore
-├── cdk.json                             # Konfiguracja CDK
-├── package.json
-├── tsconfig.json
-└── README.md
+bin/app.ts                  CDK entry point (environment from --context env=dev|test|prod)
+src/stack.ts                One stack: API Gateway + every Lambda from the config
+src/core/
+  config/lambda.config.ts   Declarative list of Lambda functions and their endpoints
+  factories/                API Gateway (CORS, API key, usage plan), Lambda, router
+src/lambdas/                Thin handlers: validate input -> call domain code -> respond
+src/ibkr/
+  parsers/                  CSV -> raw DTOs, one parser per statement section
+  mappers.service.ts        DTOs -> domain models enriched with NBP rates
+  calculations/             Pure tax functions (FIFO engine, dividends, interest, borrow, aggregation)
+  build-statement.ts        Parsed statement + rates -> API response (pure, used by the handler and tests)
+src/shared/                 Domain models, NBP client, multipart parser, utils
 ```
 
-### Architektura i zasady
+Design choices:
 
-Projekt zbudowany zgodnie z zasadami:
-- **KISS** (Keep It Simple, Stupid) - prostota i czytelność kodu
-- **SRP** (Single Responsibility Principle) - każdy moduł ma jedną odpowiedzialność
-- **Pure Functions** - funkcje bez efektów ubocznych, łatwe do testowania
-- **Factory Pattern** - modułowe komponenty infrastruktury
-- **Error Handling** - centralna obsługa błędów z custom error classes
+- Adding a Lambda means adding one entry to `LAMBDA_FUNCTIONS`.
+- Everything between the CSV and the response is pure: exchange rates are injected, so the engine runs offline in tests and scripts.
+- Input is validated at the boundary with Zod; API Gateway enforces an API key, throttling (10 rps) and a daily quota.
 
-### Opis głównych modułów
+## Getting started
 
-**`core/calculations/`** - Kalkulatory finansowe
-- `options-calculator.ts` - oblicza revenue/cost/income dla opcji (opening, closing, assignment)
-- `stocks-calculator.ts` - oblicza revenue/cost/income dla akcji (opening, closing)
+Requirements: Node.js 20+.
 
-**`core/config/`** - Konfiguracja projektu
-- `lambda.config.ts` - definicja wszystkich funkcji Lambda i ich endpointów
-- `api-messages.config.ts` - komunikaty błędów i sukcesu
-
-**`core/factories/`** - Fabryki komponentów CDK
-- `lambda-factory.ts` - tworzy funkcje Lambda z konfiguracją
-- `api-gateway-factory.ts` - tworzy API Gateway z CORS i API Key
-- `api-router-factory.ts` - łączy endpointy z funkcjami Lambda
-
-**`parsers/`** - Parsery danych wejściowych
-- `multipart-parser.ts` - parsuje multipart/form-data z API Gateway
-- `ibkr-statement-csv.parser.ts` - parsuje pliki CSV z IBKR na sekcje
-- `ibkr-trades.parser.ts` - parsuje sekcję Trades do IBKRTradeDto[]
-
-**`services/`** - Serwisy biznesowe
-- `nbp.service.ts` - pobiera kursy walut z API NBP
-- `trade-mapper.service.ts` - mapuje transakcje IBKR na Trade[] z kursami NBP
-
-**`utils/`** - Funkcje pomocnicze (każda z jedną odpowiedzialnością)
-- `error-handler.utils.ts` - konwertuje błędy na odpowiedzi HTTP
-- `response.utils.ts` - tworzy standardowe odpowiedzi HTTP
-- `validation.utils.ts` - waliduje dane wejściowe (Zod)
-- `csv-parse.utils.ts` - parsuje linie CSV
-- `date.utils.ts` - operacje na datach
-
-## Wymagania
-
-- **Node.js** (wersja 18 lub nowsza)
-- **AWS CLI** zainstalowany i skonfigurowany
-- **AWS CDK CLI** zainstalowany globalnie: `npm install -g aws-cdk`
-- **Konto AWS** z odpowiednimi uprawnieniami
-
-## Instalacja
-
-1. Zainstaluj zależności:
 ```bash
 npm install
+npm test            # unit tests, no network and no AWS account needed
+npm run type-check
 ```
 
-2. Skonfiguruj AWS credentials (jeśli jeszcze nie masz):
+Tests run on a fully synthetic statement ([test/fixtures/demo-statement.csv](test/fixtures/demo-statement.csv)) and a frozen snapshot of public NBP rates. They cover FIFO lots, shorts, options, expirations, dividends with withholding tax, interest, borrow fees, the Monday rule for NBP rates and the period tax summary.
+
+### Demo fixture for the frontend
+
 ```bash
-aws configure --profile portfolio-api
+npm run build:demo-fixture ../portfolio-turbo/apps/web/public/demo/demo-statement.json
 ```
 
-Wprowadź:
-- AWS Access Key ID
-- AWS Secret Access Key
-- Default region: `eu-west-1` (lub inny)
-- Default output format: `json`
+This re-parses the synthetic CSV (one request to the public NBP API), refreshes `test/fixtures/` and writes the API response that the frontend loads in demo mode.
 
-3. Sprawdź konfigurację:
+### Local run on your own statement
+
 ```bash
-npm run check:aws:profile
+npm run parse:local:ibkr path/to/statement.csv
 ```
 
-## Konfiguracja środowiska (opcjonalnie)
-
-1. Skopiuj przykładowy plik `.env`:
-```bash
-cp .env.example .env
-```
-
-2. Edytuj `.env` jeśli potrzebujesz zmienić domyślne wartości:
-```env
-CDK_DEFAULT_REGION=eu-west-1
-# AWS_PROFILE=portfolio-api
-```
+Keep real statements outside the repository; `example_data/` is git-ignored for that purpose.
 
 ## Deploy
 
-### Pierwszy deploy (bootstrap)
-
-Przed pierwszym deployem wykonaj bootstrap CDK (tylko raz na konto/region):
 ```bash
-cdk bootstrap --profile portfolio-api
-```
-
-### Deploy do środowiska
-
-**Deploy do dev (domyślne):**
-```bash
-npm run deploy:dev
-```
-
-**Deploy do innych środowisk:**
-```bash
-npm run deploy:test   # test environment
-npm run deploy:prod   # production environment
-```
-
-**Bezpośrednio przez CDK:**
-```bash
-cdk deploy --context env=dev --profile portfolio-api
-```
-
-### Po deployu
-
-CDK wyświetli outputy:
-- `ApiUrl` - URL Twojego API Gateway
-- `ApiId` - ID API Gateway
-- `PortfolioApiKeyId` - ID klucza API
-
-**Aby znaleźć wartość API Key:**
-1. AWS Console → API Gateway → API Keys
-2. Szukaj klucza o nazwie: `LambdaApiKey-dev` (lub ID z outputów)
-3. Kliknij na klucz i skopiuj wartość "API key"
-
-## Dodawanie nowej Lambda function
-
-Aby dodać nową funkcję Lambda:
-
-1. Utwórz folder w `src/lambdas/` z plikiem `index.ts`
-2. Dodaj konfigurację w `src/core/config/lambda.config.ts`:
-
-```typescript
-export const LAMBDA_FUNCTIONS: LambdaFunctionConfig[] = [
-  {
-    name: 'YourFunctionName',
-    entry: 'your-function/index.ts',
-    description: 'Description of your function',
-    endpoints: [
-      { 
-        path: '/your-endpoint', 
-        method: HttpMethod.POST, 
-        requiresApiKey: true 
-      }
-    ],
-  },
-];
-```
-
-
-## Środowiska
-
-Projekt wspiera wiele środowisk:
-- `dev` - środowisko deweloperskie
-- `test` - środowisko testowe
-- `prod` - środowisko produkcyjne
-
-Każde środowisko ma:
-- Osobny CloudFormation stack
-- Osobny stage w API Gateway
-- Osobny API Key
-
-## Bezpieczeństwo
-
-- **API Key** - wszystkie endpointy wymagają API Key (opcjonalnie można wyłączyć w konfiguracji)
-- **CORS** - skonfigurowany dla wszystkich originów (można ograniczyć w `api-gateway-factory.ts`)
-- **Rate limiting** - 10 requests/second, burst 20
-- **Quota** - 10,000 requests/day
-
-## Rozwiązywanie problemów
-
-### Błąd "Profile portfolio-api not found"
-```bash
+cp .env.example .env                         # optional overrides
 aws configure --profile portfolio-api
+cdk bootstrap --profile portfolio-api        # once per account and region
+ALLOWED_ORIGINS=https://my-app.vercel.app npm run deploy
 ```
 
-### Błąd "CDK bootstrap required"
-```bash
-cdk bootstrap --profile portfolio-api
-```
+`ALLOWED_ORIGINS` restricts CORS to the frontend origin; leave it unset only for local development. After deploy, the stack outputs `ApiUrl` and the API key id; the key value is in AWS Console -> API Gateway -> API Keys. The `stack:pause` / `stack:resume` scripts are described in [docs/PAUSE.md](docs/PAUSE.md).
 
-### Błąd uprawnień
-Sprawdź czy Twoje AWS credentials mają uprawnienia do:
-- CloudFormation
-- Lambda
-- API Gateway
-- IAM (do tworzenia ról)
-- S3 (dla CDK bootstrap)
+## Known limitations
 
-### API nie widoczne w Console
-- Sprawdź region (domyślnie `eu-west-1`)
-- Odśwież stronę w AWS Console
-- Sprawdź przez CloudFormation → Resources → znajdź API Gateway
+- Supported instruments: stocks and options. Forex conversions are parsed but not taxed; other asset classes (futures, bonds, crypto) are ignored.
+- Only the IBKR Activity Statement CSV format is supported.
 
-## Licencja
+## License
 
-MIT
+MIT - see [LICENSE](LICENSE).
