@@ -31,9 +31,9 @@ export const ErrorMessages: Record<string, string> = {
 
   // IBKR CSV Parser errors
   MISSING_DATE_RANGE_IN_METADATA:
-    'Brak zakresu dat w metadanych CSV. Nie można obliczyć wartości w PLN bez kursów NBP.',
+    'Missing date range in the CSV metadata. Values in PLN cannot be calculated without NBP rates.',
   MISSING_CURRENCIES_IN_METADATA:
-    'Brak walut w metadanych CSV. Nie można obliczyć wartości w PLN bez kursów NBP.',
+    'Missing currencies in the CSV metadata. Values in PLN cannot be calculated without NBP rates.',
 };
 
 export const SuccessMessages: Record<string, string> = {

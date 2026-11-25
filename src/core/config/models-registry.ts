@@ -1,12 +1,12 @@
 /**
- * Model Registry - jedyne miejsce gdzie dodajesz modele do OpenAPI
+ * Model Registry - the only place where you add models to OpenAPI
  *
- * ⚠️ Gdy dodajesz nowy model:
- * 1. Dodaj TypeScript type/enum w odpowiednim pliku
- * 2. Dodaj tutaj wpis: ModelName: {} as ModelName
- * 3. Build automatycznie wygeneruje schematy!
+ * ⚠️ When adding a new model:
+ * 1. Add the TypeScript type/enum in the appropriate file
+ * 2. Add an entry here: ModelName: {} as ModelName
+ * 3. The build generates the schemas automatically!
  *
- * typescript-json-schema używa kluczy tego obiektu jako nazw typów do generowania.
+ * typescript-json-schema uses the keys of this object as type names for generation.
  */
 
 import {

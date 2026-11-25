@@ -27,9 +27,15 @@ const envConfig: Record<string, { account?: string; region: string }> = {
 
 const config = envConfig[env] || envConfig.dev;
 
+// Comma-separated list, e.g. https://my-app.vercel.app. Unset = every origin (local development only).
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
+
 new LambdaApiStack(app, `PortfolioApiStack-${env}`, {
   env: config,
   environment: env,
+  allowedOrigins: allowedOrigins?.length ? allowedOrigins : undefined,
   description: `Stack for Portfolio API environment ${env}`,
 });
 

@@ -1,20 +1,7 @@
-import {
-  mapIBKROpenPositionsToOpenPositions,
-  mapIBKRInterestsToInterests,
-  mapIBKRDividendsToDividends,
-  mapIBKRAccountInformation,
-  mapIBKRStatementMetadata,
-  mapIBKRBorrowsToBorrows,
-  mapIBKRTradesToTrades,
-  mapIBKRNetAssetValue,
-  aggregateResults,
-  mapIBKRDeposits,
-  parseIBKRCsv,
-} from '@ibkr';
 import { parseMultipartFormData, parsedCsvSchema } from '@shared/parsers';
 import { APIGatewayProxyResult, APIGatewayProxyEvent } from 'aws-lambda';
 import { createResponse, validateFile, handleError } from '@utils';
-import { StatementResponseDto } from '@shared/models';
+import { buildStatementResponse, parseIBKRCsv } from '@ibkr';
 import { getExchangeRates } from '@shared/api';
 import { ErrorMessages } from '@core/config';
 
@@ -26,19 +13,19 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   try {
     switch (event.httpMethod) {
       case 'POST': {
-        // 1. Lambda dostaje plik CSV -> parsuj multipart/form-data
+        // 1. Lambda receives the CSV file -> parse multipart/form-data
         const parsedFile = await parseMultipartFormData(event);
 
-        // 2. Zod waliduje plik
+        // 2. Zod validates the file
         const validatedFile = validateFile(parsedCsvSchema, parsedFile);
 
-        // 3. IBKR parser parsuje zawartość CSV
+        // 3. IBKR parser parses the CSV content
         const ibkrStatement = await parseIBKRCsv(validatedFile.content);
 
-        // 4. Użyj metadanych z CSV (zakres dat i waluty)
+        // 4. Use the CSV metadata (date range and currencies)
         const metadata = ibkrStatement.metadata;
 
-        // Walidacja metadanych przed pobraniem kursów - BEZ KURSÓW NBP NIE MOŻEMY OBLICZYĆ WARTOŚCI W PLN
+        // Validate metadata before fetching rates - WITHOUT NBP RATES WE CANNOT CALCULATE PLN VALUES
         if (!metadata.minDate || !metadata.maxDate) {
           return createResponse(400, ErrorMessages.MISSING_DATE_RANGE_IN_METADATA);
         }
@@ -47,7 +34,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           return createResponse(400, ErrorMessages.MISSING_CURRENCIES_IN_METADATA);
         }
 
-        // Pobierz kursy NBP - metadane są zwalidowane
+        // Fetch NBP rates - metadata is validated
         const exchangeRatesCache = await getExchangeRates(
           metadata.currencies,
           metadata.minDate,
@@ -55,37 +42,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           10
         );
 
-        // 6. Mapuj wszystkie dane z użyciem wspólnego cache kursów
-        const dividends = mapIBKRDividendsToDividends(ibkrStatement.dividends, exchangeRatesCache);
-        const interests = mapIBKRInterestsToInterests(ibkrStatement.interests, exchangeRatesCache);
-        const borrows = mapIBKRBorrowsToBorrows(ibkrStatement.borrows, exchangeRatesCache);
-        const trades = mapIBKRTradesToTrades(ibkrStatement.trades, exchangeRatesCache);
-        const openPositions = mapIBKROpenPositionsToOpenPositions(
-          ibkrStatement.openPositions,
-          exchangeRatesCache
-        );
-
-        // Mapuj proste modele (bez dodatkowych obliczeń)
-        const accountInformation = mapIBKRAccountInformation(ibkrStatement.accountInformation);
-        const netAssetValue = mapIBKRNetAssetValue(ibkrStatement.netAssetValue);
-        const deposits = mapIBKRDeposits(ibkrStatement.deposits);
-        const mappedMetadata = mapIBKRStatementMetadata(metadata);
-
-        const periodTaxSummary = aggregateResults(trades, dividends, interests, borrows);
-
-        const statement: StatementResponseDto = {
-          generateDate: new Date().toISOString(),
-          metadata: mappedMetadata,
-          accountInformation,
-          periodTaxSummary,
-          netAssetValue,
-          openPositions,
-          deposits,
-          interests,
-          dividends,
-          borrows,
-          trades,
-        };
+        const statement = buildStatementResponse(ibkrStatement, exchangeRatesCache);
 
         return createResponse(200, statement);
       }

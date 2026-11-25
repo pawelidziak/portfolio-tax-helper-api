@@ -15,7 +15,7 @@ export const lambdaFactory = (
   config: LambdaFunctionConfig,
   environment: string
 ): LambdaFactoryResult => {
-  // Użyj bundling options z config lub domyślne wartości
+  // Use bundling options from config or default values
   const bundlingOptions = {
     minify: config.bundling?.minify ?? true,
     sourceMap: config.bundling?.sourceMap ?? true,
@@ -32,8 +32,8 @@ export const lambdaFactory = (
       ...config.environment,
     },
     description: config.description || `${config.name} Lambda function`,
-    timeout: Duration.seconds(30), // Timeout 30s dla wywołań API zewnętrznych
-    memorySize: 512, // 512MB RAM dla szybszego wykonania
+    timeout: Duration.seconds(30), // 30s timeout for external API calls
+    memorySize: 512, // 512MB RAM for faster execution
     bundling: bundlingOptions,
   });
 
