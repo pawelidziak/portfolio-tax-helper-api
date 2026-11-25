@@ -1,0 +1,1059 @@
+{
+  "generateDate": "2026-01-05T09:00:00.000Z",
+  "metadata": {
+    "minDate": "2025-01-01",
+    "maxDate": "2025-12-31",
+    "currencies": {}
+  },
+  "accountInformation": {
+    "name": "Demo Investor",
+    "account": "U1234567",
+    "accountType": "Individual",
+    "customerType": "Individual",
+    "accountCapabilities": "Margin",
+    "baseCurrency": "USD"
+  },
+  "periodTaxSummary": {
+    "totalWithholdingTaxPLN": 179.749515,
+    "taxableIncome": 18802.627994000002,
+    "totalRevenue": 286570.77424900007,
+    "totalIncome": 18802.627994000002,
+    "taxAmount": 3406.480275860001,
+    "totalCost": 267768.14625499997,
+    "taxRate": 0.19
+  },
+  "netAssetValue": {
+    "items": [
+      {
+        "assetClass": "Cash",
+        "priorTotal": 0,
+        "currentLong": 15000,
+        "currentShort": 0,
+        "currentTotal": 15000,
+        "change": 15000
+      },
+      {
+        "assetClass": "Stock",
+        "priorTotal": 0,
+        "currentLong": 13500,
+        "currentShort": 0,
+        "currentTotal": 13500,
+        "change": 13500
+      },
+      {
+        "assetClass": "Interest Accruals",
+        "priorTotal": 0,
+        "currentLong": 20,
+        "currentShort": 0,
+        "currentTotal": 20,
+        "change": 20
+      }
+    ]
+  },
+  "openPositions": [
+    {
+      "symbol": "AMZN",
+      "category": "STOCKS",
+      "currency": "USD",
+      "quantity": 10,
+      "mult": 1,
+      "costPrice": 200.1,
+      "costBasis": 2001,
+      "closePrice": 230,
+      "value": 2300,
+      "unrealizedPL": 299,
+      "exchangeRate": {
+        "date": "2025-12-30",
+        "rate": 3.5936
+      }
+    },
+    {
+      "symbol": "TSLA",
+      "category": "STOCKS",
+      "currency": "USD",
+      "quantity": 40,
+      "mult": 1,
+      "costPrice": 300.01,
+      "costBasis": 12000.4,
+      "closePrice": 280,
+      "value": 11200,
+      "unrealizedPL": -800.4,
+      "exchangeRate": {
+        "date": "2025-12-30",
+        "rate": 3.5936
+      }
+    }
+  ],
+  "deposits": [
+    {
+      "category": "DEPOSIT",
+      "currency": "PLN",
+      "settleDate": "2025-01-15",
+      "description": "Electronic Fund Transfer",
+      "amount": 50000
+    },
+    {
+      "category": "DEPOSIT",
+      "currency": "PLN",
+      "settleDate": "2025-03-14",
+      "description": "Electronic Fund Transfer",
+      "amount": 25000
+    },
+    {
+      "category": "DEPOSIT",
+      "currency": "PLN",
+      "settleDate": "2025-06-02",
+      "description": "Electronic Fund Transfer",
+      "amount": 40000
+    },
+    {
+      "category": "DEPOSIT",
+      "currency": "PLN",
+      "settleDate": "2025-11-20",
+      "description": "Electronic Fund Transfer",
+      "amount": -10000
+    }
+  ],
+  "interests": [
+    {
+      "category": "INTEREST",
+      "date": "2025-02-05",
+      "currency": "USD",
+      "description": "USD Credit Interest for Jan-2025",
+      "amount": 12.34,
+      "exchangeRate": {
+        "date": "2025-02-04",
+        "rate": 4.0864
+      },
+      "summary": {
+        "revenue": 50.426176,
+        "cost": 0,
+        "income": 50.426176
+      }
+    },
+    {
+      "category": "INTEREST",
+      "date": "2025-03-05",
+      "currency": "USD",
+      "description": "USD Credit Interest for Feb-2025",
+      "amount": 10.11,
+      "exchangeRate": {
+        "date": "2025-03-04",
+        "rate": 3.9543
+      },
+      "summary": {
+        "revenue": 39.977973,
+        "cost": 0,
+        "income": 39.977973
+      }
+    },
+    {
+      "category": "INTEREST",
+      "date": "2025-04-03",
+      "currency": "USD",
+      "description": "USD Debit Interest for Mar-2025",
+      "amount": -4.2,
+      "exchangeRate": {
+        "date": "2025-04-02",
+        "rate": 3.8707
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 16.25694,
+        "income": -16.25694
+      }
+    }
+  ],
+  "dividends": [
+    {
+      "category": "DIVIDEND",
+      "symbol": "AAPL",
+      "date": "2025-02-13",
+      "currency": "USD",
+      "grossAmount": 25,
+      "withholdingTaxAmount": -3.75,
+      "netAmount": 21.25,
+      "exchangeRate": {
+        "date": "2025-02-12",
+        "rate": 4.0215
+      },
+      "summary": {
+        "revenue": 100.5375,
+        "cost": 0,
+        "income": 100.5375,
+        "withholdingTaxPLN": 15.080625,
+        "withholdingTaxCreditPLN": 15.080625
+      }
+    },
+    {
+      "category": "DIVIDEND",
+      "symbol": "KO",
+      "date": "2025-03-14",
+      "currency": "USD",
+      "grossAmount": 102,
+      "withholdingTaxAmount": -15.3,
+      "netAmount": 86.7,
+      "exchangeRate": {
+        "date": "2025-03-13",
+        "rate": 3.8568
+      },
+      "summary": {
+        "revenue": 393.3936,
+        "cost": 0,
+        "income": 393.3936,
+        "withholdingTaxPLN": 59.00904,
+        "withholdingTaxCreditPLN": 59.00904
+      }
+    },
+    {
+      "category": "DIVIDEND",
+      "symbol": "SAP",
+      "date": "2025-05-16",
+      "currency": "EUR",
+      "grossAmount": 44,
+      "withholdingTaxAmount": -11.6,
+      "netAmount": 32.4,
+      "exchangeRate": {
+        "date": "2025-05-15",
+        "rate": 4.2378
+      },
+      "summary": {
+        "revenue": 186.4632,
+        "cost": 0,
+        "income": 186.4632,
+        "withholdingTaxPLN": 49.15848,
+        "withholdingTaxCreditPLN": 35.428008
+      }
+    },
+    {
+      "category": "DIVIDEND",
+      "symbol": "KO",
+      "date": "2025-06-13",
+      "currency": "USD",
+      "grossAmount": 102,
+      "withholdingTaxAmount": -15.3,
+      "netAmount": 86.7,
+      "exchangeRate": {
+        "date": "2025-06-12",
+        "rate": 3.6929
+      },
+      "summary": {
+        "revenue": 376.6758,
+        "cost": 0,
+        "income": 376.6758,
+        "withholdingTaxPLN": 56.50137,
+        "withholdingTaxCreditPLN": 56.50137
+      }
+    }
+  ],
+  "borrows": [
+    {
+      "category": "BORROW",
+      "symbol": "AMD",
+      "valueDate": "2025-07-09",
+      "currency": "USD",
+      "quantity": 100,
+      "price": 150,
+      "value": 15000,
+      "feeRate": 0.5,
+      "borrowFee": -0.21,
+      "code": "Po",
+      "exchangeRate": {
+        "date": "2025-07-08",
+        "rate": 3.6135
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0.758835,
+        "income": -0.758835
+      }
+    },
+    {
+      "category": "BORROW",
+      "symbol": "AMD",
+      "valueDate": "2025-07-10",
+      "currency": "USD",
+      "quantity": 100,
+      "price": 148,
+      "value": 14800,
+      "feeRate": 0.5,
+      "borrowFee": -0.2,
+      "code": "Po",
+      "exchangeRate": {
+        "date": "2025-07-09",
+        "rate": 3.6198
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0.72396,
+        "income": -0.72396
+      }
+    },
+    {
+      "category": "BORROW",
+      "symbol": "AMD",
+      "valueDate": "2025-07-11",
+      "currency": "USD",
+      "quantity": 100,
+      "price": 147,
+      "value": 14700,
+      "feeRate": 0.5,
+      "borrowFee": -0.2,
+      "code": "Po",
+      "exchangeRate": {
+        "date": "2025-07-10",
+        "rate": 3.6209
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0.72418,
+        "income": -0.72418
+      }
+    },
+    {
+      "category": "BORROW",
+      "symbol": "AMD",
+      "valueDate": "2025-07-14",
+      "currency": "USD",
+      "quantity": 100,
+      "price": 146,
+      "value": 14600,
+      "feeRate": 0.5,
+      "borrowFee": -0.6,
+      "code": "Po",
+      "exchangeRate": {
+        "date": "2025-07-11",
+        "rate": 3.6432
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 2.18592,
+        "income": -2.18592
+      }
+    }
+  ],
+  "trades": [
+    {
+      "symbol": "KO",
+      "dateTime": "2025-01-14, 10:30:00",
+      "category": "STOCKS",
+      "currency": "USD",
+      "quantity": 200,
+      "tradePrice": 70,
+      "closingPrice": 70.4,
+      "proceeds": -14000,
+      "commissionFee": -1,
+      "basis": 14001,
+      "realizedPL": 0,
+      "mtmPL": 80,
+      "code": "O",
+      "exchangeRate": {
+        "date": "2025-01-13",
+        "rate": 4.1904
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0,
+        "income": 0
+      },
+      "actions": [
+        {
+          "type": "OPEN_LONG",
+          "symbol": "KO",
+          "qty": 200,
+          "tradePricePerLotPLN": 293.328,
+          "beforeQty": 0,
+          "afterQty": 200
+        }
+      ],
+      "quantityAfter": 200
+    },
+    {
+      "symbol": "USD.PLN",
+      "dateTime": "2025-01-15, 11:30:08",
+      "category": "FOREX",
+      "currency": "PLN",
+      "quantity": 13500,
+      "tradePrice": 3.7,
+      "closingPrice": 0,
+      "proceeds": -49950,
+      "commissionFee": -2,
+      "basis": 0,
+      "realizedPL": 0,
+      "mtmPL": 3.02,
+      "code": "",
+      "exchangeRate": {
+        "date": "2025-01-14",
+        "rate": 1
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0,
+        "income": 0
+      },
+      "actions": []
+    },
+    {
+      "symbol": "AAPL",
+      "dateTime": "2025-02-10, 10:15:30",
+      "category": "STOCKS",
+      "currency": "USD",
+      "quantity": 100,
+      "tradePrice": 200,
+      "closingPrice": 201.5,
+      "proceeds": -20000,
+      "commissionFee": -1,
+      "basis": 20001,
+      "realizedPL": 0,
+      "mtmPL": 150,
+      "code": "O",
+      "exchangeRate": {
+        "date": "2025-02-07",
+        "rate": 4.0321
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0,
+        "income": 0
+      },
+      "actions": [
+        {
+          "type": "OPEN_LONG",
+          "symbol": "AAPL",
+          "qty": 100,
+          "tradePricePerLotPLN": 806.42,
+          "beforeQty": 0,
+          "afterQty": 100
+        }
+      ],
+      "quantityAfter": 100
+    },
+    {
+      "symbol": "AAPL 21MAR25 220 C",
+      "dateTime": "2025-02-20, 10:12:00",
+      "category": "OPTIONS",
+      "currency": "USD",
+      "quantity": -1,
+      "tradePrice": 3,
+      "closingPrice": 2.8,
+      "proceeds": 300,
+      "commissionFee": -1,
+      "basis": -299,
+      "realizedPL": 0,
+      "mtmPL": 20,
+      "code": "O",
+      "exchangeRate": {
+        "date": "2025-02-19",
+        "rate": 3.9875
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0,
+        "income": 0
+      },
+      "actions": [
+        {
+          "type": "OPEN_SHORT",
+          "symbol": "AAPL 21MAR25 220 C",
+          "qty": 1,
+          "tradePricePerLotPLN": 1196.25,
+          "beforeQty": 0,
+          "afterQty": -1
+        }
+      ],
+      "quantityAfter": -1
+    },
+    {
+      "symbol": "TSLA",
+      "dateTime": "2025-03-04, 11:05:00",
+      "category": "STOCKS",
+      "currency": "USD",
+      "quantity": 50,
+      "tradePrice": 250,
+      "closingPrice": 252,
+      "proceeds": -12500,
+      "commissionFee": -1,
+      "basis": 12501,
+      "realizedPL": 0,
+      "mtmPL": 100,
+      "code": "O",
+      "exchangeRate": {
+        "date": "2025-03-03",
+        "rate": 4.0112
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0,
+        "income": 0
+      },
+      "actions": [
+        {
+          "type": "OPEN_LONG",
+          "symbol": "TSLA",
+          "qty": 50,
+          "tradePricePerLotPLN": 1002.8,
+          "beforeQty": 0,
+          "afterQty": 50
+        }
+      ],
+      "quantityAfter": 50
+    },
+    {
+      "symbol": "AAPL 21MAR25 220 C",
+      "dateTime": "2025-03-10, 11:00:00",
+      "category": "OPTIONS",
+      "currency": "USD",
+      "quantity": 1,
+      "tradePrice": 1,
+      "closingPrice": 1.1,
+      "proceeds": -100,
+      "commissionFee": -1,
+      "basis": 299,
+      "realizedPL": 198,
+      "mtmPL": -10,
+      "code": "C",
+      "exchangeRate": {
+        "date": "2025-03-07",
+        "rate": 3.8448
+      },
+      "summary": {
+        "revenue": 1196.25,
+        "cost": 392.3123,
+        "income": 803.9377
+      },
+      "actions": [
+        {
+          "type": "CLOSE_SHORT",
+          "symbol": "AAPL 21MAR25 220 C",
+          "qty": 1,
+          "tradePricePerLotPLN": 384.48,
+          "lotPricePerLotPLN": 1196.25,
+          "beforeQty": -1,
+          "afterQty": 0
+        }
+      ],
+      "quantityAfter": 0
+    },
+    {
+      "symbol": "EUR.PLN",
+      "dateTime": "2025-03-17, 10:00:00",
+      "category": "FOREX",
+      "currency": "PLN",
+      "quantity": 5100,
+      "tradePrice": 4.2,
+      "closingPrice": 0,
+      "proceeds": -21420,
+      "commissionFee": -2,
+      "basis": 0,
+      "realizedPL": 0,
+      "mtmPL": -1.1,
+      "code": "",
+      "exchangeRate": {
+        "date": "2025-03-16",
+        "rate": 1
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0,
+        "income": 0
+      },
+      "actions": []
+    },
+    {
+      "symbol": "SAP",
+      "dateTime": "2025-03-18, 09:10:00",
+      "category": "STOCKS",
+      "currency": "EUR",
+      "quantity": 20,
+      "tradePrice": 250,
+      "closingPrice": 251,
+      "proceeds": -5000,
+      "commissionFee": -4,
+      "basis": 5004,
+      "realizedPL": 0,
+      "mtmPL": 20,
+      "code": "O",
+      "exchangeRate": {
+        "date": "2025-03-17",
+        "rate": 4.1777
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0,
+        "income": 0
+      },
+      "actions": [
+        {
+          "type": "OPEN_LONG",
+          "symbol": "SAP",
+          "qty": 20,
+          "tradePricePerLotPLN": 1044.425,
+          "beforeQty": 0,
+          "afterQty": 20
+        }
+      ],
+      "quantityAfter": 20
+    },
+    {
+      "symbol": "AAPL",
+      "dateTime": "2025-04-15, 15:42:10",
+      "category": "STOCKS",
+      "currency": "USD",
+      "quantity": -100,
+      "tradePrice": 230,
+      "closingPrice": 228,
+      "proceeds": 23000,
+      "commissionFee": -1,
+      "basis": -20001,
+      "realizedPL": 2998,
+      "mtmPL": -200,
+      "code": "C",
+      "exchangeRate": {
+        "date": "2025-04-14",
+        "rate": 3.7564
+      },
+      "summary": {
+        "revenue": 86397.2,
+        "cost": 80649.7885,
+        "income": 5747.4115
+      },
+      "actions": [
+        {
+          "type": "CLOSE_LONG",
+          "symbol": "AAPL",
+          "qty": 100,
+          "tradePricePerLotPLN": 863.972,
+          "lotPricePerLotPLN": 806.42,
+          "beforeQty": 100,
+          "afterQty": 0
+        }
+      ],
+      "quantityAfter": 0
+    },
+    {
+      "symbol": "TSLA",
+      "dateTime": "2025-05-06, 09:45:12",
+      "category": "STOCKS",
+      "currency": "USD",
+      "quantity": 50,
+      "tradePrice": 300,
+      "closingPrice": 295,
+      "proceeds": -15000,
+      "commissionFee": -1,
+      "basis": 15001,
+      "realizedPL": 0,
+      "mtmPL": -250,
+      "code": "O",
+      "exchangeRate": {
+        "date": "2025-05-05",
+        "rate": 3.7752
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0,
+        "income": 0
+      },
+      "actions": [
+        {
+          "type": "OPEN_LONG",
+          "symbol": "TSLA",
+          "qty": 50,
+          "tradePricePerLotPLN": 1132.56,
+          "beforeQty": 50,
+          "afterQty": 100
+        }
+      ],
+      "quantityAfter": 100
+    },
+    {
+      "symbol": "USD.PLN",
+      "dateTime": "2025-06-03, 11:15:00",
+      "category": "FOREX",
+      "currency": "PLN",
+      "quantity": 10800,
+      "tradePrice": 3.7,
+      "closingPrice": 0,
+      "proceeds": -39960,
+      "commissionFee": -2,
+      "basis": 0,
+      "realizedPL": 0,
+      "mtmPL": 1.5,
+      "code": "",
+      "exchangeRate": {
+        "date": "2025-06-02",
+        "rate": 1
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0,
+        "income": 0
+      },
+      "actions": []
+    },
+    {
+      "symbol": "TSLA",
+      "dateTime": "2025-06-17, 14:20:45",
+      "category": "STOCKS",
+      "currency": "USD",
+      "quantity": -60,
+      "tradePrice": 320,
+      "closingPrice": 318,
+      "proceeds": 19200,
+      "commissionFee": -1.2,
+      "basis": -15501.2,
+      "realizedPL": 3697.6,
+      "mtmPL": -120,
+      "code": "C",
+      "exchangeRate": {
+        "date": "2025-06-16",
+        "rate": 3.6804
+      },
+      "summary": {
+        "revenue": 70663.68,
+        "cost": 61474.78272,
+        "income": 9188.89728
+      },
+      "actions": [
+        {
+          "type": "CLOSE_LONG",
+          "symbol": "TSLA",
+          "qty": 50,
+          "tradePricePerLotPLN": 1177.728,
+          "lotPricePerLotPLN": 1002.8,
+          "beforeQty": 100,
+          "afterQty": 50
+        },
+        {
+          "type": "CLOSE_LONG",
+          "symbol": "TSLA",
+          "qty": 10,
+          "tradePricePerLotPLN": 1177.728,
+          "lotPricePerLotPLN": 1132.56,
+          "beforeQty": 50,
+          "afterQty": 40
+        }
+      ],
+      "quantityAfter": 40
+    },
+    {
+      "symbol": "AMD",
+      "dateTime": "2025-07-08, 16:05:00",
+      "category": "STOCKS",
+      "currency": "USD",
+      "quantity": -100,
+      "tradePrice": 150,
+      "closingPrice": 148,
+      "proceeds": 15000,
+      "commissionFee": -1,
+      "basis": -14999,
+      "realizedPL": 0,
+      "mtmPL": 200,
+      "code": "O",
+      "exchangeRate": {
+        "date": "2025-07-07",
+        "rate": 3.6269
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0,
+        "income": 0
+      },
+      "actions": [
+        {
+          "type": "OPEN_SHORT",
+          "symbol": "AMD",
+          "qty": 100,
+          "tradePricePerLotPLN": 544.035,
+          "beforeQty": 0,
+          "afterQty": -100
+        }
+      ],
+      "quantityAfter": -100
+    },
+    {
+      "symbol": "TSLA 19SEP25 350 C",
+      "dateTime": "2025-07-22, 10:00:00",
+      "category": "OPTIONS",
+      "currency": "USD",
+      "quantity": 1,
+      "tradePrice": 5,
+      "closingPrice": 5.5,
+      "proceeds": -500,
+      "commissionFee": -1,
+      "basis": 501,
+      "realizedPL": 0,
+      "mtmPL": 50,
+      "code": "O",
+      "exchangeRate": {
+        "date": "2025-07-21",
+        "rate": 3.6455
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0,
+        "income": 0
+      },
+      "actions": [
+        {
+          "type": "OPEN_LONG",
+          "symbol": "TSLA 19SEP25 350 C",
+          "qty": 1,
+          "tradePricePerLotPLN": 1822.75,
+          "beforeQty": 0,
+          "afterQty": 1
+        }
+      ],
+      "quantityAfter": 1
+    },
+    {
+      "symbol": "AMD",
+      "dateTime": "2025-08-12, 15:30:00",
+      "category": "STOCKS",
+      "currency": "USD",
+      "quantity": 100,
+      "tradePrice": 120,
+      "closingPrice": 121,
+      "proceeds": -12000,
+      "commissionFee": -1,
+      "basis": 14999,
+      "realizedPL": 2998,
+      "mtmPL": -100,
+      "code": "C",
+      "exchangeRate": {
+        "date": "2025-08-11",
+        "rate": 3.6495
+      },
+      "summary": {
+        "revenue": 54403.5,
+        "cost": 43801.2764,
+        "income": 10602.2236
+      },
+      "actions": [
+        {
+          "type": "CLOSE_SHORT",
+          "symbol": "AMD",
+          "qty": 100,
+          "tradePricePerLotPLN": 437.94,
+          "lotPricePerLotPLN": 544.035,
+          "beforeQty": -100,
+          "afterQty": 0
+        }
+      ],
+      "quantityAfter": 0
+    },
+    {
+      "symbol": "TSLA 19SEP25 350 C",
+      "dateTime": "2025-08-26, 14:00:00",
+      "category": "OPTIONS",
+      "currency": "USD",
+      "quantity": -1,
+      "tradePrice": 9,
+      "closingPrice": 8.5,
+      "proceeds": 900,
+      "commissionFee": -1,
+      "basis": -501,
+      "realizedPL": 398,
+      "mtmPL": -50,
+      "code": "C",
+      "exchangeRate": {
+        "date": "2025-08-25",
+        "rate": 3.6421
+      },
+      "summary": {
+        "revenue": 3277.89,
+        "cost": 1830.0376,
+        "income": 1447.8524
+      },
+      "actions": [
+        {
+          "type": "CLOSE_LONG",
+          "symbol": "TSLA 19SEP25 350 C",
+          "qty": 1,
+          "tradePricePerLotPLN": 3277.89,
+          "lotPricePerLotPLN": 1822.75,
+          "beforeQty": 1,
+          "afterQty": 0
+        }
+      ],
+      "quantityAfter": 0
+    },
+    {
+      "symbol": "KO",
+      "dateTime": "2025-09-09, 13:10:00",
+      "category": "STOCKS",
+      "currency": "USD",
+      "quantity": -200,
+      "tradePrice": 62,
+      "closingPrice": 61.5,
+      "proceeds": 12400,
+      "commissionFee": -1,
+      "basis": -14001,
+      "realizedPL": -1602,
+      "mtmPL": 100,
+      "code": "C",
+      "exchangeRate": {
+        "date": "2025-09-08",
+        "rate": 3.6214
+      },
+      "summary": {
+        "revenue": 44905.36,
+        "cost": 58673.4118,
+        "income": -13768.0518
+      },
+      "actions": [
+        {
+          "type": "CLOSE_LONG",
+          "symbol": "KO",
+          "qty": 200,
+          "tradePricePerLotPLN": 224.5268,
+          "lotPricePerLotPLN": 293.328,
+          "beforeQty": 200,
+          "afterQty": 0
+        }
+      ],
+      "quantityAfter": 0
+    },
+    {
+      "symbol": "SAP",
+      "dateTime": "2025-10-14, 10:20:00",
+      "category": "STOCKS",
+      "currency": "EUR",
+      "quantity": -20,
+      "tradePrice": 280,
+      "closingPrice": 279,
+      "proceeds": 5600,
+      "commissionFee": -4,
+      "basis": -5004,
+      "realizedPL": 592,
+      "mtmPL": -20,
+      "code": "C",
+      "exchangeRate": {
+        "date": "2025-10-13",
+        "rate": 4.2592
+      },
+      "summary": {
+        "revenue": 23851.52,
+        "cost": 20922.2476,
+        "income": 2929.2724
+      },
+      "actions": [
+        {
+          "type": "CLOSE_LONG",
+          "symbol": "SAP",
+          "qty": 20,
+          "tradePricePerLotPLN": 1192.576,
+          "lotPricePerLotPLN": 1044.425,
+          "beforeQty": 20,
+          "afterQty": 0
+        }
+      ],
+      "quantityAfter": 0
+    },
+    {
+      "symbol": "AMD 28NOV25 100 P",
+      "dateTime": "2025-10-28, 10:30:00",
+      "category": "OPTIONS",
+      "currency": "USD",
+      "quantity": -1,
+      "tradePrice": 2,
+      "closingPrice": 1.8,
+      "proceeds": 200,
+      "commissionFee": -1,
+      "basis": -199,
+      "realizedPL": 0,
+      "mtmPL": 20,
+      "code": "O",
+      "exchangeRate": {
+        "date": "2025-10-27",
+        "rate": 3.6395
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0,
+        "income": 0
+      },
+      "actions": [
+        {
+          "type": "OPEN_SHORT",
+          "symbol": "AMD 28NOV25 100 P",
+          "qty": 1,
+          "tradePricePerLotPLN": 727.9,
+          "beforeQty": 0,
+          "afterQty": -1
+        }
+      ],
+      "quantityAfter": -1
+    },
+    {
+      "symbol": "AMZN",
+      "dateTime": "2025-11-04, 10:00:00",
+      "category": "STOCKS",
+      "currency": "USD",
+      "quantity": 10,
+      "tradePrice": 200,
+      "closingPrice": 230,
+      "proceeds": -2000,
+      "commissionFee": -1,
+      "basis": 2001,
+      "realizedPL": 0,
+      "mtmPL": 300,
+      "code": "O",
+      "exchangeRate": {
+        "date": "2025-11-03",
+        "rate": 3.6933
+      },
+      "summary": {
+        "revenue": 0,
+        "cost": 0,
+        "income": 0
+      },
+      "actions": [
+        {
+          "type": "OPEN_LONG",
+          "symbol": "AMZN",
+          "qty": 10,
+          "tradePricePerLotPLN": 738.66,
+          "beforeQty": 0,
+          "afterQty": 10
+        }
+      ],
+      "quantityAfter": 10
+    },
+    {
+      "symbol": "AMD 28NOV25 100 P",
+      "dateTime": "2025-11-28, 16:20:00",
+      "category": "OPTIONS",
+      "currency": "USD",
+      "quantity": 1,
+      "tradePrice": 0,
+      "closingPrice": 0,
+      "proceeds": 0,
+      "commissionFee": 0,
+      "basis": 199,
+      "realizedPL": 199,
+      "mtmPL": 0,
+      "code": "C;Ep",
+      "exchangeRate": {
+        "date": "2025-11-27",
+        "rate": 3.651
+      },
+      "summary": {
+        "revenue": 727.9,
+        "cost": 3.6395,
+        "income": 724.2605
+      },
+      "actions": [
+        {
+          "type": "CLOSE_SHORT",
+          "symbol": "AMD 28NOV25 100 P",
+          "qty": 1,
+          "tradePricePerLotPLN": 0,
+          "lotPricePerLotPLN": 727.9,
+          "beforeQty": -1,
+          "afterQty": 0
+        }
+      ],
+      "quantityAfter": 0
+    }
+  ]
+}

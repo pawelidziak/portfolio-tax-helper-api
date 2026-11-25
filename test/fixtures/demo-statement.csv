@@ -1,0 +1,80 @@
+Statement,Header,Field Name,Field Value
+Statement,Data,BrokerName,Demo Broker
+Statement,Data,Title,Activity Statement
+Statement,Data,Period,"January 1, 2025 - December 31, 2025"
+Statement,Data,WhenGenerated,"2026-01-05, 09:00:00 EST"
+Account Information,Header,Field Name,Field Value
+Account Information,Data,Name,Demo Investor
+Account Information,Data,Account,U1234567
+Account Information,Data,Account Type,Individual
+Account Information,Data,Customer Type,Individual
+Account Information,Data,Account Capabilities,Margin
+Account Information,Data,Base Currency,USD
+Net Asset Value,Header,Asset Class,Prior Total,Current Long,Current Short,Current Total,Change
+Net Asset Value,Data,Cash ,0,15000,0,15000,15000
+Net Asset Value,Data,Stock,0,13500,0,13500,13500
+Net Asset Value,Data,Interest Accruals,0,20,0,20,20
+Net Asset Value,Data,Total,0,28520,0,28520,28520
+Cash Report,Header,Currency Summary,Currency,Total,Securities,Futures,
+Cash Report,Data,Ending Cash,USD,15000,15000,0,
+Cash Report,Data,Ending Cash,EUR,100,100,0,
+Cash Report,Data,Ending Cash,PLN,1000,1000,0,
+Open Positions,Header,DataDiscriminator,Asset Category,Currency,Symbol,Quantity,Mult,Cost Price,Cost Basis,Close Price,Value,Unrealized P/L,Code
+Open Positions,Data,Summary,Stocks,USD,AMZN,10,1,200.1,2001,230,2300,299,
+Open Positions,Data,Summary,Stocks,USD,TSLA,40,1,300.01,12000.4,280,11200,-800.4,
+Open Positions,Total,,Stocks,USD,,,,,14001.4,,13500,-501.4,
+Trades,Header,DataDiscriminator,Asset Category,Currency,Symbol,Date/Time,Quantity,T. Price,C. Price,Proceeds,Comm/Fee,Basis,Realized P/L,MTM P/L,Code
+Trades,Data,Order,Stocks,USD,AAPL,"2025-02-10, 10:15:30",100,200,201.5,-20000,-1,20001,0,150,O
+Trades,Data,Order,Stocks,USD,AAPL,"2025-04-15, 15:42:10",-100,230,228,23000,-1,-20001,2998,-200,C
+Trades,SubTotal,,Stocks,USD,AAPL,,0,,,3000,-2,0,2998,-50,
+Trades,Data,Order,Stocks,USD,TSLA,"2025-03-04, 11:05:00",50,250,252,-12500,-1,12501,0,100,O
+Trades,Data,Order,Stocks,USD,TSLA,"2025-05-06, 09:45:12",50,300,295,-15000,-1,15001,0,-250,O
+Trades,Data,Order,Stocks,USD,TSLA,"2025-06-17, 14:20:45",-60,320,318,19200,-1.2,-15501.2,3697.6,-120,C
+Trades,SubTotal,,Stocks,USD,TSLA,,40,,,-8300,-3.2,12000.4,3697.6,-270,
+Trades,Data,Order,Stocks,USD,KO,"2025-01-14, 10:30:00",200,70,70.4,-14000,-1,14001,0,80,O
+Trades,Data,Order,Stocks,USD,KO,"2025-09-09, 13:10:00",-200,62,61.5,12400,-1,-14001,-1602,100,C
+Trades,Data,Order,Stocks,USD,AMD,"2025-07-08, 16:05:00",-100,150,148,15000,-1,-14999,0,200,O
+Trades,Data,Order,Stocks,USD,AMD,"2025-08-12, 15:30:00",100,120,121,-12000,-1,14999,2998,-100,C
+Trades,Data,Order,Stocks,USD,AMZN,"2025-11-04, 10:00:00",10,200,230,-2000,-1,2001,0,300,O
+Trades,Data,Order,Stocks,EUR,SAP,"2025-03-18, 09:10:00",20,250,251,-5000,-4,5004,0,20,O
+Trades,Data,Order,Stocks,EUR,SAP,"2025-10-14, 10:20:00",-20,280,279,5600,-4,-5004,592,-20,C
+Trades,Total,,Stocks,USD,,,,,,0,0,0,0,0,
+Trades,Data,Order,Equity and Index Options,USD,AAPL 21MAR25 220 C,"2025-02-20, 10:12:00",-1,3,2.8,300,-1,-299,0,20,O
+Trades,Data,Order,Equity and Index Options,USD,AAPL 21MAR25 220 C,"2025-03-10, 11:00:00",1,1,1.1,-100,-1,299,198,-10,C
+Trades,Data,Order,Equity and Index Options,USD,TSLA 19SEP25 350 C,"2025-07-22, 10:00:00",1,5,5.5,-500,-1,501,0,50,O
+Trades,Data,Order,Equity and Index Options,USD,TSLA 19SEP25 350 C,"2025-08-26, 14:00:00",-1,9,8.5,900,-1,-501,398,-50,C
+Trades,Data,Order,Equity and Index Options,USD,AMD 28NOV25 100 P,"2025-10-28, 10:30:00",-1,2,1.8,200,-1,-199,0,20,O
+Trades,Data,Order,Equity and Index Options,USD,AMD 28NOV25 100 P,"2025-11-28, 16:20:00",1,0,0,0,0,199,199,0,C;Ep
+Trades,Header,DataDiscriminator,Asset Category,Currency,Symbol,Date/Time,Quantity,T. Price,,Proceeds,Comm in USD,,,MTM in USD,Code
+Trades,Data,Order,Forex,PLN,USD.PLN,"2025-01-15, 11:30:08","13,500",3.7,,-49950,-2,,,3.02,
+Trades,Data,Order,Forex,PLN,EUR.PLN,"2025-03-17, 10:00:00","5,100",4.2,,-21420,-2,,,-1.1,
+Trades,Data,Order,Forex,PLN,USD.PLN,"2025-06-03, 11:15:00","10,800",3.7,,-39960,-2,,,1.5,
+Deposits & Withdrawals,Header,Currency,Settle Date,Description,Amount
+Deposits & Withdrawals,Data,PLN,2025-01-15,Electronic Fund Transfer,50000
+Deposits & Withdrawals,Data,PLN,2025-03-14,Electronic Fund Transfer,25000
+Deposits & Withdrawals,Data,PLN,2025-06-02,Electronic Fund Transfer,40000
+Deposits & Withdrawals,Data,PLN,2025-11-20,Electronic Fund Transfer,-10000
+Deposits & Withdrawals,Data,Total,,,105000
+Dividends,Header,Currency,Date,Description,Amount
+Dividends,Data,USD,2025-02-13,AAPL(US0378331005) Cash Dividend USD 0.25 per Share (Ordinary Dividend),25
+Dividends,Data,USD,2025-03-14,KO(US1912161007) Cash Dividend USD 0.51 per Share (Ordinary Dividend),102
+Dividends,Data,EUR,2025-05-16,SAP(DE0007164600) Cash Dividend EUR 2.20 per Share (Ordinary Dividend),44
+Dividends,Data,USD,2025-06-13,KO(US1912161007) Cash Dividend USD 0.51 per Share (Ordinary Dividend),102
+Dividends,Data,Total,,,171
+Withholding Tax,Header,Currency,Date,Description,Amount,Code
+Withholding Tax,Data,USD,2025-02-05,Withholding @ 20% on Credit Interest for Jan-2025,-2.47,
+Withholding Tax,Data,USD,2025-02-13,AAPL(US0378331005) Cash Dividend USD 0.25 per Share - US Tax,-3.75,
+Withholding Tax,Data,USD,2025-03-05,Withholding @ 20% on Credit Interest for Feb-2025,-2.02,
+Withholding Tax,Data,USD,2025-03-14,KO(US1912161007) Cash Dividend USD 0.51 per Share - US Tax,-15.3,
+Withholding Tax,Data,EUR,2025-05-16,SAP(DE0007164600) Cash Dividend EUR 2.20 per Share - DE Tax,-11.6,
+Withholding Tax,Data,USD,2025-06-13,KO(US1912161007) Cash Dividend USD 0.51 per Share - US Tax,-15.3,
+Interest,Header,Currency,Date,Description,Amount
+Interest,Data,USD,2025-02-05,USD Credit Interest for Jan-2025,12.34
+Interest,Data,USD,2025-03-05,USD Credit Interest for Feb-2025,10.11
+Interest,Data,USD,2025-04-03,USD Debit Interest for Mar-2025,-4.2
+Interest,Data,Total,,,18.25
+Borrow Fee Details,Header,Currency,Value Date,Symbol,Quantity,Price,Value,Fee Rate (%),Borrow Fee,Code
+Borrow Fee Details,Data,USD,2025-07-09,AMD,100,150,15000,0.5,-0.21,Po
+Borrow Fee Details,Data,USD,2025-07-10,AMD,100,148,14800,0.5,-0.2,Po
+Borrow Fee Details,Data,USD,2025-07-11,AMD,100,147,14700,0.5,-0.2,Po
+Borrow Fee Details,Data,USD,2025-07-14,AMD,100,146,14600,0.5,-0.6,Po
